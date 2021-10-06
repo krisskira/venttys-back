@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  venttys-wh:
+    image: venttys-wh
+    build: .
+    container_name: watsapp-handler
+    volumes: 
+      - ./public/qr-codes:/home/app/public/qr-codes
+      - ./tokens:/home/app/tokens
+    environment: 
+      - PHONE=
+      - COMMERCE=
+      - NODE_ENV= 
+      - PORT=
+      - EXTERNAL_PUBSUB_SERVER='kafka:9092'
+    ports: 
+      - 3000:80
+    hostname: watsapp-handler
+    working_dir: /home/app
+    networks:
+      - venttys-net
+networks: 
+  venttys-net:
+    name: venttys-net
