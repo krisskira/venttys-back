@@ -1,0 +1,33 @@
+
+input PaymentMethodInput {
+  name: String!
+  id: String!
+  description: String!
+}
+
+input CommerceScheduleDateInput {
+  name: String!
+  number_day: Int!
+  code: Day!
+  close: TimeInput!
+  open: TimeInput!
+  is_enable: Boolean!
+}
+
+input CommerceMessageFieldInput {
+  is_enable: Boolean!
+  value: String!
+}
+
+input CommerceMessageInput {
+  open: CommerceMessageFieldInput!
+  await: CommerceMessageFieldInput!
+  close: CommerceMessageFieldInput!
+}
+
+input CommerceInput {
+  name: String!
+  phone: String!
+  address: String!
+  state: String!
+}

@@ -8,13 +8,13 @@ services:
       - ./public/qr-codes:/home/app/public/qr-codes
       - ./tokens:/home/app/tokens
     environment: 
-      - PHONE=
-      - COMMERCE=
-      - NODE_ENV= 
-      - PORT=
-      - EXTERNAL_PUBSUB_SERVER='kafka:9092'
+      - PHONE=+573183919187
+      - COMMERCE=Antonia
+      - NODE_ENV=development
+      - PORT=8003
+      - EXTERNAL_PUBSUB_SERVER=kafka:9092
     ports: 
-      - 3000:80
+      - 8003:8003
     hostname: watsapp-handler
     working_dir: /home/app
     networks:

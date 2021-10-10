@@ -19,10 +19,10 @@ export class FixedIntentsHandler {
         /** 
          * TODO: the intents can be pass to props or get from commerce collection
         */
-        this.intents = !!intents ? intents : botModel
+        this.intents = intents ? intents : botModel;
         this.getCommerceInfo(this.commercePhoneNumber)
             .then(commerceData => {
-                this.commerceInfo = commerceData.info
+                this.commerceInfo = commerceData.info;
                 // this.firebaseCommerceRef = commerceData.ref
             })
             .catch(error => {
@@ -30,8 +30,8 @@ export class FixedIntentsHandler {
                     tag: this.TAG,
                     type: "ERROR",
                     msg: error
-                })
-            })
+                });
+            });
     }
 
     async botQueryByTag(args: BotQueryArgs) {
@@ -47,14 +47,14 @@ export class FixedIntentsHandler {
                 .includes(args.pattern.toLowerCase()));
 
         if (!dialogResponse) {
-            dialogResponse = this.intents[0]
+            dialogResponse = this.intents[0];
             // throw "Intent not found";
         }
 
         // Replace all variables in respose messages.
-        for (let index in dialogResponse.variables) {
+        for (const index in dialogResponse.variables) {
             const variable = dialogResponse.variables[index];
-            for (let indexResp in dialogResponse.response) {
+            for (const indexResp in dialogResponse.response) {
                 const message = dialogResponse.response[indexResp];
                 dialogResponse.response[indexResp] = await this.replaceVariables({
                     commerceInfo: this.commerceInfo,
@@ -86,7 +86,7 @@ export class FixedIntentsHandler {
             //     payment_methods: commercePaymentMethods,
             // },
         };
-    };
+    }
 
     private async getCommerceInfo(commercePhoneNumber: string) {
         const commercesQueryResult = await firebaseDB
@@ -110,32 +110,30 @@ export class FixedIntentsHandler {
         let value = "_value_";
 
         switch (args.variable) {
-            case "assistanceName":
-                value = "Venttys Bot";
-                break;
-            case "commerceName":
-                value = args.commerceInfo.name;
-                break;
-            case "commerceAddress":
-                value = args.commerceInfo.address;
-                break;
-            case "commerceSchedule":
-                break;
-            case "commerceDeliveryZones":
-                break;
+        case "assistanceName":
+            value = "Venttys Bot";
+            break;
+        case "commerceName":
+            //value = args.commerceInfo.name;
+            value = "Antonias";
+            break;
+        case "commerceAddress":
+            // value = args.commerceInfo.address;
+            value = "Calle 1";
+            break;
+        case "commerceSchedule":
+            break;
+        case "commerceDeliveryZones":
+            break;
             // Hot build variables over session
-            case "temp_products_selected":
-                break;
-            case "temp_parcial_value":
-                break;
-            case "temp_clientName":
-                break;
-            case "temp_products_selected":
-                break;
-            case "temp_parcial_value":
-                break;
-            case "temp_accountNumbers":
-                break;
+        case "temp_products_selected":
+            break;
+        case "temp_parcial_value":
+            break;
+        case "temp_clientName":
+            break;
+        case "temp_accountNumbers":
+            break;
         }
         return args.paragraph.replace(regex, value);
     }

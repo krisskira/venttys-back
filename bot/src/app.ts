@@ -18,7 +18,11 @@ const COMMERCE = process.env.COMMERCE;
 const pubSubHost = process.env.EXTERNAL_PUBSUB_SERVER;
 
 if (!PHONE || !pubSubHost || !COMMERCE) {
-    throw "\n***-> Bad implementation!!!\n";
+    throw "\n***-> Bad implementation!!!\n"
+    + `Environment: ${ENV}\n`  
+    + `Phone: ${PHONE}\n`  
+    + `Commerce: ${COMMERCE}\n`
+    + `pubSubHost: ${pubSubHost}\n`;
 }
 
 const logger = new WistonLogger(ENV);

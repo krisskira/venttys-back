@@ -31,7 +31,8 @@ export class WhatsAppHandler implements iWhatsappHandler {
             logQR: false,
             disableSpins: true,
             disableWelcome: true,
-            autoClose: 0
+            autoClose: 0,
+            createPathFileToken: true
         };
         create(phoneNumber, this.genQrImage, this.statusFind, config)
             .then(client => this.asignEvents(client))
@@ -130,49 +131,120 @@ export class WhatsAppHandler implements iWhatsappHandler {
     }
 
     private async asignEvents(client: Whatsapp): Promise<void> {
+
         this.client = client;
+
+        this.client.onIncomingCall(async (call) => {
+            console.log("***-> Llamada entrante: ", call);
+            this.client.sendText(call.peerJid, "Lo siento, Ahora no puedo recibir llamadas.");
+        });
+
+        this.client.onMessage((message) => {
+            if (!message.from.includes("status@broadcast") && !message.fromMe && message.isGroupMsg === false) {
+                this.bot.getResponse(message.from, message.body, async (response) => {
+                    try {
+
+                        const buttons = [
+                            {
+                                buttonId: "id1",
+                                type: 1,
+                                buttonText: {
+                                    displayText: "😋 Hacer un pedido"
+                                }
+                            },
+                            {
+                                buttonId: "id2",
+                                type: 1,
+                                buttonText: {
+                                    displayText: "🕧 Conocer ubicación y horarios"
+                                }
+                            }
+                        ];
+
+                        const list = [{
+                            title: "Carnes",
+                            description: "description", rowId:"id1",
+                            rows: [
+                                {
+                                    title: "Carne Asada",
+                                    description: "Made with Carne",
+                                },
+                                {
+                                    title: "Ravioli Lasagna",
+                                    description: "Made with layers of frozen cheese",
+                                }
+                            ]
+                        },
+                        {
+                            title: "Jugos",
+                            description: "description", rowId:"id2",
+                            rows: [
+                                {
+                                    title: "Limonada",
+                                    description: "Made with limones",
+                                },
+                                {
+                                    title: "Coco",
+                                    description: "Made with Cocos",
+                                }
+                            ]
+                        }
+                        ];
+
+                        console.log("***-> Respondiendo a: ", message.from, "\Message: ", message.body);
+                        await this.client.sendText(message.from, response);
+                        await this.client.sendListMenu(message.from, "Title", "subTitle", "Description", "menu", list);
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        await this.client.sendButtons(message.from, "Este es nuestro menú", buttons as any, "¿Qué deseas Ver?");
+                    } catch (error) {
+                        console.log("***-> Ups error: ", error);
+                        this.logger.log({
+                            tag: this.TAG + this.phoneNumber,
+                            type: "WARNING",
+                            msg: "Oops! " + message.from + " " + (error as Error).message
+                        });
+                    }
+                });
+            }
+        });
 
         this.bot.setMessageSender(async (to: string, message: string) => {
             try {
                 await this.client.sendText(to, message);
             } catch (error) {
+                console.log("***-> Error: ", error);
                 this.logger.log({
                     tag: this.TAG + this.phoneNumber,
                     type: "ERROR",
-                    msg: error.message
+                    msg: (error as Error).message
                 });
             }
         });
 
-        ["SIGINT", "exit", "SIGKILL", "SIGTERM", "SIGUSR1", "SIGUSR2"].forEach(messageId => {
-            process.on(messageId, () => {
+        [
+            "SIGINT",
+            "exit",
+            "SIGKILL",
+            "SIGTERM",
+            "SIGUSR1",
+            "SIGUSR2"
+        ].forEach(messageId => {
+            process.on(messageId, async () => {
+                console.log("***-> Lanzando senia: ", messageId);
                 this.logger.log({
                     tag: this.TAG + this.phoneNumber,
                     type: "WARNING",
                     msg: "Closing session"
                 });
-                this.client.close().then(() => process.exit(0));
+                this.client.close()
+                    .then(() => {
+                        process.exit(0);
+                    })
+                    .catch(reason => {
+                        console.log("***-> Ups! Close session error", reason);
+                        process.exit(0);
+                    });
             });
-        });
-
-        this.client.onIncomingCall(async (call) => {
-            this.client.sendText(call.peerJid, "Lo siento, Ahora no puedo recibir llamadas.");
-        });
-
-        this.client.onMessage((message) => {
-            if (!message.fromMe && message.isGroupMsg === false) {
-                this.bot.getResponse(message.from, message.body, async (response) => {
-                    try {
-                        await this.client.sendText(message.from, response);
-                    } catch (error) {
-                        this.logger.log({
-                            tag: this.TAG + this.phoneNumber,
-                            type: "WARNING",
-                            msg: "Oops! " + message.from + " " + error.message
-                        });
-                    }
-                });
-            }
         });
     }
 }

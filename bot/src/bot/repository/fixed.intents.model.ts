@@ -33,7 +33,7 @@ export const intents: iBotIntent[] = [
     },
     {
         tag: "HacerPedido",
-        pattern: ["1", "HP", "hacer pedido"],
+        pattern: ["1", "HP", "hacer pedido", "😋 Hacer un pedido"],
         variables: [],
         response: ["Este es nuestro menú. \n*¿Qué deseas Ordenar?*\n"],
         response_options_from_commerce: {

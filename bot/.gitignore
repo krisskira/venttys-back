@@ -9,4 +9,4 @@ logs/*
 !public/qr-codes/index.html
 !tokens/.gitkeep
 .env
-src/firebase/quickstartsample-opvsxj-5d9f20ff1907.json
+src/firebase/firebase.cert.json

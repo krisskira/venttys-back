@@ -14,11 +14,11 @@ export class StaticBot implements iBot {
     constructor(context: string, genOrders: iOrderRepository, logger: iLogger) {
         this.commercePhoneNumber = context;
         this.genOrders = genOrders;
-         this.logger = logger;
+        this.logger = logger;
         this.intentResolver = new FixedIntentsHandler({
             context,
             logger
-        })
+        });
         genOrders.listen(this.notifyChageOrderStatus);
     }
 
@@ -31,11 +31,11 @@ export class StaticBot implements iBot {
         // Posible solucion, todas las respuestas dentro del la 
         // conversacion deberan de tene diferentes codigos.
         // responder("TODO: Respondiendo desde el bot");
-        const botResponse = await this.intentResolver.botQueryByTag({ pattern: query, userPhoneNumber: clientPhoneNumber })
-        const answer =  botResponse.dialogResponse.response.join('\n')
-        const answerOption =  botResponse.dialogResponse.response_options?.join('\n') || '';
+        const botResponse = await this.intentResolver.botQueryByTag({ pattern: query, userPhoneNumber: clientPhoneNumber });
+        const answer =  botResponse.dialogResponse.response.join("\n");
+        const answerOption =  botResponse.dialogResponse.response_options?.join("\n") || "";
         
-        !!answer && responder(answer + "\n" + answerOption)
+        !!answer && responder(answer + "\n" + answerOption);
         // TODO: Genera una orden.
         // this.genOrders.generate()
     }
