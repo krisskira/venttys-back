@@ -48,7 +48,6 @@ export class FixedIntentsHandler {
 
         if (!dialogResponse) {
             dialogResponse = this.intents[0];
-            // throw "Intent not found";
         }
 
         // Replace all variables in respose messages.
@@ -91,14 +90,10 @@ export class FixedIntentsHandler {
     private async getCommerceInfo(commercePhoneNumber: string) {
         const commercesQueryResult = await firebaseDB
             .collection("commerces")
-            .where("phone", "==", commercePhoneNumber);
+            .doc(commercePhoneNumber);
 
-        const commerces = await commercesQueryResult.get();
+        const commerceRef = await commercesQueryResult.get();
 
-        if (commerces.size === 0) {
-            throw "Commerce not found.";
-        }
-        const commerceRef = commerces.docs[commerces.size - 1];
         return {
             info: <iCommerce>commerceRef.data(),
             ref: <FirebaseFirestore.DocumentReference>commerceRef.ref,

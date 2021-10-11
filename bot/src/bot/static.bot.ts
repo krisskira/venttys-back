@@ -1,5 +1,5 @@
 import { iLogger } from "src/interfaces/logger.interface";
-import { iBot } from "../interfaces/bot.interface";
+import { iBot, iBotButtonOption, iBotListOption } from "../interfaces/bot.interface";
 import { iOrder, iOrderRepository } from "../interfaces/orders.repository.interface";
 import { FixedIntentsHandler } from "./repository/fixed.intents.repository";
 
@@ -26,16 +26,37 @@ export class StaticBot implements iBot {
         this.sendMessage = sendMessage;
     }
 
-    async getResponse(clientPhoneNumber: string, query: string, responder: (message: string) => void): Promise<void> {
+    async getResponse(clientPhoneNumber: string, query: string, responder: (message?: string, buttons?: iBotButtonOption[], list?: iBotListOption) => void): Promise<void> {
         // TODO:  Como se debe manejar la session del usuario?
         // Posible solucion, todas las respuestas dentro del la 
         // conversacion deberan de tene diferentes codigos.
         // responder("TODO: Respondiendo desde el bot");
         const botResponse = await this.intentResolver.botQueryByTag({ pattern: query, userPhoneNumber: clientPhoneNumber });
-        const answer =  botResponse.dialogResponse.response.join("\n");
-        const answerOption =  botResponse.dialogResponse.response_options?.join("\n") || "";
-        
-        !!answer && responder(answer + "\n" + answerOption);
+        const answer = botResponse.dialogResponse.response.join("\n");
+        const answerOption = botResponse.dialogResponse.response_options; //?.join("\n") || "";
+        let options: iBotListOption | iBotButtonOption[];
+
+        if (answerOption.length > 0) {
+            if (botResponse.dialogResponse.response_options_type === "button") {
+                options = answerOption.map<iBotButtonOption>(options => ({
+                    buttonText: {
+                        displayText: options
+                    }
+                }));
+                // TODO: add list on last function parameter
+                responder(answer, options as iBotButtonOption[]);
+            }
+
+            else if (botResponse.dialogResponse.response_options_type === "list") {
+                options = {
+                    title: answer,
+                    rows: answerOption.map( option  => ({
+                        title: option
+                    }))
+                } as iBotListOption;
+                responder(answer,undefined ,options);
+            }
+        }
         // TODO: Genera una orden.
         // this.genOrders.generate()
     }

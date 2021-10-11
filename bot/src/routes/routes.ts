@@ -12,8 +12,9 @@ export const dispathEvents: DispatchEvent = ({ event, data }) => {
     console.log("***-> Evento: ", event);
     console.log("***-> payload: ", data);
     switch (event) {
-        case "GET_STATUS": {
-            getStatusEventUserCase(data);
-        }
+    case "GET_STATUS": {
+        getStatusEventUserCase(data);
+        break;
+    }
     }
 };

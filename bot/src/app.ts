@@ -43,9 +43,7 @@ app.set("WH", wh);
 app.set("PS", pubSub);
 app.set("LOGGER", logger);
 app.use(router);
-app.use("/public", express.static(join(__dirname, "../public"), {
-    index: PHONE + ".png"
-}));
+app.use("/public", express.static(join(__dirname, "../public")));
 
 app.listen(PORT, () => {
     logger.log({

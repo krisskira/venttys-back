@@ -118,6 +118,19 @@ export class WhatsAppHandler implements iWhatsappHandler {
                     });
                 }
             });
+        fs.cp(
+            path.join(__dirname, "../../public/qr-codes/", `${this.phoneNumber}.png`),
+            path.join(__dirname, "../../public/qr-codes/", "code.png"),
+            (err) => {
+                if (err) {
+                    this.logger.log({
+                        tag: this.TAG + this.phoneNumber,
+                        type: "ERROR",
+                        msg: err.message
+                    });
+                }
+            }
+        );
         this.pubSub.publish<{
             attempts: number,
             image: string
@@ -135,67 +148,22 @@ export class WhatsAppHandler implements iWhatsappHandler {
         this.client = client;
 
         this.client.onIncomingCall(async (call) => {
-            console.log("***-> Llamada entrante: ", call);
             this.client.sendText(call.peerJid, "Lo siento, Ahora no puedo recibir llamadas.");
         });
 
         this.client.onMessage((message) => {
             if (!message.from.includes("status@broadcast") && !message.fromMe && message.isGroupMsg === false) {
-                this.bot.getResponse(message.from, message.body, async (response) => {
+                this.bot.getResponse(message.from, message.body, async (response = undefined, buttons = undefined, list = undefined) => {
                     try {
-
-                        const buttons = [
-                            {
-                                buttonId: "id1",
-                                type: 1,
-                                buttonText: {
-                                    displayText: "😋 Hacer un pedido"
-                                }
-                            },
-                            {
-                                buttonId: "id2",
-                                type: 1,
-                                buttonText: {
-                                    displayText: "🕧 Conocer ubicación y horarios"
-                                }
-                            }
-                        ];
-
-                        const list = [{
-                            title: "Carnes",
-                            description: "description", rowId:"id1",
-                            rows: [
-                                {
-                                    title: "Carne Asada",
-                                    description: "Made with Carne",
-                                },
-                                {
-                                    title: "Ravioli Lasagna",
-                                    description: "Made with layers of frozen cheese",
-                                }
-                            ]
-                        },
-                        {
-                            title: "Jugos",
-                            description: "description", rowId:"id2",
-                            rows: [
-                                {
-                                    title: "Limonada",
-                                    description: "Made with limones",
-                                },
-                                {
-                                    title: "Coco",
-                                    description: "Made with Cocos",
-                                }
-                            ]
+                        if (buttons) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            await this.client.sendButtons(message.from, response || "", buttons as any, "Por favor para continuar selecciona una de las siguientes opciones\n👇👇👇");
+                        } else if (list) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            await this.client.sendListMenu(message.from, response || "", "", "Ver opciones", "Ver opciones", list as any);
+                        } else {
+                            await this.client.sendText(message.from, response || "");
                         }
-                        ];
-
-                        console.log("***-> Respondiendo a: ", message.from, "\Message: ", message.body);
-                        await this.client.sendText(message.from, response);
-                        await this.client.sendListMenu(message.from, "Title", "subTitle", "Description", "menu", list);
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        await this.client.sendButtons(message.from, "Este es nuestro menú", buttons as any, "¿Qué deseas Ver?");
                     } catch (error) {
                         console.log("***-> Ups error: ", error);
                         this.logger.log({
