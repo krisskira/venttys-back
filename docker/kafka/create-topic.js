@@ -1,7 +1,7 @@
 const { AdminClient } = require("node-rdkafka");
-require("dotenv").config()
-const {EXTERNAL_PUBSUB_SERVER='0.0.0.0:9093'} = process.env;
-console.log(EXTERNAL_PUBSUB_SERVER);
+require("dotenv").config();
+const { EXTERNAL_PUBSUB_SERVER = "localhost:9093" } = process.env;
+
 const topicName = "venttys_graphql_api";
 const topic = {
   topic: topicName,
@@ -10,7 +10,7 @@ const topic = {
 };
 
 const admin = AdminClient.create({
-  "client.id": "admin",
+  "client.id": "admin:create-topic",
   "metadata.broker.list": EXTERNAL_PUBSUB_SERVER,
 });
 

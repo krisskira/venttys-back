@@ -4,11 +4,13 @@
   "description": "",
   "main": "admin.js",
   "scripts": {
-    "start": "node admin.js"
+    "create-topic": "node create-topic.js",
+    "demo": "node demo.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^10.0.0",
     "node-rdkafka": "^2.11.0"
   }
 }

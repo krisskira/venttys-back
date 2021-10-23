@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+
+  mongo:
+    ports: 
+      - 27017:27017
+  zookeeper:
+    ports:
+      - "2181:2181"
+  kafka:
+    ports:
+      - "9092:9092"
+      - "9093:9093"
