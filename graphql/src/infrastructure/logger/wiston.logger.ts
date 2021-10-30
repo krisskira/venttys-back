@@ -17,22 +17,17 @@ export class WistonLogger implements iLogger {
         maxsize: 5 * 1024 * 1024,
         maxFiles: 5,
         format: format.combine(
-          format.json(),
           format.timestamp(),
-          format.colorize(),
-          format.simple()
+          format.printf(
+            ({ level, message, timestamp }) =>
+              `[${timestamp}] [${level}]:\n${message}\n`
+          )
         ),
       };
     };
     this._logger = createLogger({
       level: "debug",
-      format: format.combine(
-        format.json(),
-        format.timestamp(),
-        format.colorize(),
-        format.simple()
-      ),
-      defaultMeta: { service: "venttys-graphql-api" },
+      format: format.combine(format.simple()),
       transports: [
         new transports.File(transporOptionBuilder("info")),
         new transports.File(transporOptionBuilder("warn")),
@@ -55,25 +50,25 @@ export class WistonLogger implements iLogger {
       case "DEBUG":
         this._logger.log({
           level: "debug",
-          message: args.tag + args.msg,
+          message: args.tag + ": " + args.msg,
         });
         break;
       case "INFO":
         this._logger.log({
           level: "info",
-          message: args.tag + args.msg,
+          message: args.tag + ": " + args.msg,
         });
         break;
       case "WARNING":
         this._logger.log({
           level: "warn",
-          message: args.tag + args.msg,
+          message: args.tag + ": " + args.msg,
         });
         break;
       case "ERROR":
         this._logger.log({
           level: "error",
-          message: args.tag + args.msg,
+          message: args.tag + ": " + args.msg,
         });
         break;
     }

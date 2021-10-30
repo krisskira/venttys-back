@@ -8,7 +8,7 @@ export const whatsAppStartSessionUseCase = async (
   processHandler: iProcessHandler,
   whatsappPathScriptHandler: string,
   commerceInfo: CommerceBasicInfo
-): Promise<void> => {
+): Promise<string[]> => {
   const { phoneNumber: processName, name: commerceName } = { ...commerceInfo };
   const args: iProcessArgs = {
     processName,
@@ -18,5 +18,6 @@ export const whatsAppStartSessionUseCase = async (
       commerceNumber: processName,
     },
   };
-  await processHandler.run(args);
+  const result = await processHandler.run(args);
+  return result || [];
 };

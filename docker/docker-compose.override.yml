@@ -5,6 +5,7 @@ services:
   mongo:
     ports: 
       - 27017:27017
+
   zookeeper:
     ports:
       - "2181:2181"

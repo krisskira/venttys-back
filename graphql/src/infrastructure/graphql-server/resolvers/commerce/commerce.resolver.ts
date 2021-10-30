@@ -20,7 +20,7 @@ const commerces: iResolver<void> = async (...[, , context]) => {
     return await getCommercesController();
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: commerces",
+      tag: "Resolver: commerces",
       type: "ERROR",
       msg: error.message,
     });
@@ -35,7 +35,7 @@ const commerceBy: iResolver<{ phoneNumber: string }> = async (
     return await getCommerceByPhoneNumberController(phoneNumber);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: commerceBy",
+      tag: "Resolver: commerceBy",
       type: "ERROR",
       msg: error.toString(),
     });
@@ -50,7 +50,7 @@ const createCommerce: iResolver<{ commerceInfo: Commerce }> = async (
     return await createCommerceController(commerceInfo);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: createCommerce",
+      tag: "Resolver: createCommerce",
       type: "ERROR",
       msg: error.message,
     });
@@ -65,7 +65,7 @@ const updateCommerce: iResolver<{ commerceInfo: Partial<Commerce> }> = async (
     return await updateCommerceController(commerceInfo);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: updateCommerce",
+      tag: "Resolver: updateCommerce",
       type: "ERROR",
       msg: error.message,
     });
@@ -80,7 +80,7 @@ const deactivateCommerce: iResolver<{ commerceId: string }> = async (
     return await deactivateCommerceController(commerceId);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: deactivateCommerce",
+      tag: "Resolver: deactivateCommerce",
       type: "ERROR",
       msg: error.message,
     });
@@ -95,7 +95,7 @@ const usersByCommerce: iResolver<{ commerceId: string }> = async (
     return await getUsersByCommerceController(commerceId);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: usersByCommerce",
+      tag: "Resolver: usersByCommerce",
       type: "ERROR",
       msg: error.message,
     });
@@ -110,7 +110,7 @@ const enrollUserAtCommerce: iResolver<{ userInfo: CommerceUser }> = async (
     return await enrollUsersAtCommerceController(userInfo);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: enrollUserAtCommerce",
+      tag: "Resolver: enrollUserAtCommerce",
       type: "ERROR",
       msg: error.message,
     });
@@ -125,7 +125,7 @@ const dropUserOfCommerce: iResolver<{ userId: string }> = async (
     return await removeUserOfCommerceController(userId);
   } catch (error) {
     context?.logger?.log({
-      tag: "***-> Resolver: dropUserOfCommerce",
+      tag: "Resolver: dropUserOfCommerce",
       type: "ERROR",
       msg: error.message,
     });

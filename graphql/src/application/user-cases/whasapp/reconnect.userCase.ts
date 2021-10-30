@@ -1,12 +1,23 @@
 import { CommerceBasicInfo } from "../../../domain/commerce.interface";
-import { iProcessHandler } from "../../../infrastructure/interfaces/processHandler.interface";
+import {
+  Events,
+  iPubSub,
+  PubSubChannel,
+} from "../../../infrastructure/interfaces";
 
 export const whatsAppReconnectUserCase = async (
-  processHandler: iProcessHandler,
+  pubSub: iPubSub,
   commerceInfo: CommerceBasicInfo
 ): Promise<void> => {
-  await processHandler.sendMessage({
-    code: "RECONNECT",
-    processName: commerceInfo.phoneNumber,
-  });
+  pubSub.publish(
+    PubSubChannel.onWhatsAppEvent,
+    {
+      to: commerceInfo.phoneNumber,
+      event: Events.RECONNECT,
+      data: {
+        ...commerceInfo,
+      },
+    },
+    "ExternalPubSubBroker"
+  );
 };

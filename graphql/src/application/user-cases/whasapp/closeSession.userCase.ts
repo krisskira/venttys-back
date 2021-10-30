@@ -3,6 +3,7 @@ import { iProcessHandler } from "../../../infrastructure/interfaces/processHandl
 export const whatsAppCloseSessionUserCase = async (
   processHandler: iProcessHandler,
   commercePhoneNumber: string
-): Promise<void> => {
-  await processHandler.stop(commercePhoneNumber);
+): Promise<string[]> => {
+  const result = await processHandler.stop(commercePhoneNumber);
+  return result || [];
 };

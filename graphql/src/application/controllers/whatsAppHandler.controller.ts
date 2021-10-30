@@ -1,7 +1,9 @@
 import { Controller } from "../../domain";
 import { CommerceBasicInfo } from "../../domain/commerce.interface";
+import { iProcess } from "../../infrastructure/interfaces";
 import {
   whatsAppCloseSessionUserCase,
+  whatsAppGetAllStatusUserCase,
   whatsAppGetStatusUserCase,
   whatsAppReconnectUserCase,
   whatsAppStartSessionUseCase,
@@ -10,8 +12,8 @@ import { WhatsAppScriptPathHandler } from "./../../infrastructure/whatsapp-handl
 
 export const whatsAppHandlerStartSessionController: Controller<
   CommerceBasicInfo,
-  Promise<void>
-> = async (commerceBasicInfo, appContext): Promise<void> => {
+  Promise<string[]>
+> = async (commerceBasicInfo, appContext): Promise<string[]> => {
   return await whatsAppStartSessionUseCase(
     appContext!.processHandler,
     WhatsAppScriptPathHandler,
@@ -19,32 +21,44 @@ export const whatsAppHandlerStartSessionController: Controller<
   );
 };
 
-export const whatsAppHandlerStatusController: Controller<
+export const whatsAppHandlerCloseController: Controller<
   string,
-  Promise<void>
-> = async (commercePhoneNumber, appContext): Promise<void> => {
-  return await whatsAppGetStatusUserCase(
+  Promise<string[]>
+> = async (commercePhoneNumber, appContext): Promise<string[]> => {
+  return await whatsAppCloseSessionUserCase(
     appContext!.processHandler,
     commercePhoneNumber!
   );
 };
 
+export const whatsAppHandlerStatusController: Controller<
+  string,
+  Promise<iProcess[]>
+> = async (commercePhoneNumber, appContext): Promise<iProcess[]> => {
+  return await whatsAppGetStatusUserCase(
+    appContext!.processHandler,
+    appContext!.pubSub,
+    commercePhoneNumber!
+  );
+};
+
+export const whatsAppHandlerAllStatusController: Controller<
+  void,
+  Promise<iProcess[]>
+> = async (_args, appContext): Promise<iProcess[]> => {
+  return await whatsAppGetAllStatusUserCase(
+    appContext!.processHandler,
+    appContext!.pubSub
+  );
+};
+
+// TODO: Complete send notification to reconnect
 export const whatsAppHandlerReconectController: Controller<
   CommerceBasicInfo,
   Promise<void>
 > = async (commerceBasicInfo, appContext): Promise<void> => {
   return await whatsAppReconnectUserCase(
-    appContext!.processHandler,
+    appContext!.pubSub,
     commerceBasicInfo!
-  );
-};
-
-export const whatsAppHandlerCloseController: Controller<
-  string,
-  Promise<void>
-> = async (commercePhoneNumber, appContext): Promise<void> => {
-  return await whatsAppCloseSessionUserCase(
-    appContext!.processHandler,
-    commercePhoneNumber!
   );
 };

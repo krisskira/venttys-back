@@ -7,18 +7,19 @@ export type ProcessStatus =
   | "launching"
   | "errored"
   | "one-launch-status";
-interface iProcessArgs {
+
+export interface iProcessArgs {
   processName: string;
   scriptPath: string;
   envVars: { [key: string]: string };
 }
 
-interface iProcessMessageArgs {
+export interface iProcessMessageArgs {
   code: WhatsAppMessageType;
   processName: string;
 }
 
-interface iProcess {
+export interface iProcess {
   code?: string;
   processId?: string | number;
   processStatus?: {
@@ -28,13 +29,14 @@ interface iProcess {
     uptime?: number;
     restartTime?: number;
   };
+  raw?: unknown;
 }
 
 export interface iProcessHandler {
-  init: () => Promise<void>;
-  run: (process: iProcessArgs) => Promise<void>;
-  stop: (process: string) => Promise<void>;
-  restart: (process: string) => Promise<void>;
+  init: () => Promise<string[] | void>;
+  run: (process: iProcessArgs) => Promise<string[] | void>;
+  stop: (process: string) => Promise<string[] | void>;
+  restart: (process: string) => Promise<string[] | void>;
   list: () => Promise<iProcess[]>;
   getProcess: (processName: string | number) => Promise<iProcess[]>;
   sendMessage: (args: iProcessMessageArgs) => Promise<void>;

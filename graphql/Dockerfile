@@ -29,13 +29,13 @@ ENV PATH $NODE_HOME/bin:$PATH
 
 RUN curl https://nodejs.org/dist/v$NODE_VERSION/$NODE_PACKAGE.tar.gz | tar -xzC /opt/
 
-ENV EXTERNAL_PUBSUB_SERVER='kafka:9092'
-ENV ENV=production
-ENV PORT=80
+ENV EXTERNAL_PUBSUB_SERVER='venttys-kafka:9092'
+ENV ENV='production'
+ENV PORT='80'
 EXPOSE 80
 
 COPY --from=App /home/app /home/app
 WORKDIR /home/app
-VOLUME [ "/home/app/public/qr", "/home/app/logs" ]
+VOLUME [ "/home/app/public", "/home/app/logs" ]
 
 CMD ["npm", "start"]

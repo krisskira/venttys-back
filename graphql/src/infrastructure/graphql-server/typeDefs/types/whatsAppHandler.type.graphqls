@@ -9,15 +9,16 @@ type NotificationType {
 }
 
 type Query {
-    getWhatsAppStatus(phoneNumber: String): Void
+    getAllWhatsAppStatus: [JSON]
+    getWhatsAppStatus(phoneNumber: String): [JSON]
 }
 
 type Mutation {
-    initWhatsAppListener(commerceInfo: CommerceWhatsAppInfo): Void
+    initWhatsAppListener(commerceInfo: CommerceWhatsAppInfo): [String]
+    stopWhatsAppListener(phoneNumber: String): [String]
     whatsAppReconnect(commerceInfo: CommerceWhatsAppInfo): Void
-    stopWhatsAppListener(phoneNumber: String): Void
 }
 
 type Subscription {
-    onWhatsAppEvent: NotificationType
+    onWhatsAppEvent(phoneNumber: String): NotificationType
 }

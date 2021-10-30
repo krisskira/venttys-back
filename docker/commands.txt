@@ -2,13 +2,13 @@
 docker run -it --rm --network venttys-net -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181 bitnami/kafka:latest kafka-topics.sh --list  --zookeeper zookeeper:2181
 
 ** CREATE COMMERCE CONTAINER
-docker run -it --rm         \
+docker run -it --rm    \
     -e PORT=8003            \
     -e NODE_ENV=development \
     -e PHONE="+573183919187"\
-    -e COMMERCE="antonias"  \
+    -e COMMERCE="FabianTest"  \
     -e EXTERNAL_PUBSUB_SERVER='kafka:9092' \
     --network=venttys-net   \
     -p 8003:8003            \
-    --name antonias         \
-    venttys-wh bash
+    --name FabianTest         \
+    watsapp-handler bash 

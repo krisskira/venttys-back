@@ -4,13 +4,14 @@
   "description": "",
   "main": "admin.js",
   "scripts": {
-    "create-topic": "node create-topic.js",
-    "demo": "node demo.js"
+    "create-topic": "nodemon create-topic.js",
+    "demo": "nodemon demo.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^10.0.0",
-    "node-rdkafka": "^2.11.0"
+    "node-rdkafka": "^2.11.0",
+    "nodemon": "^2.0.14"
   }
 }

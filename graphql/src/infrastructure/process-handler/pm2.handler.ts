@@ -20,7 +20,7 @@ import {
 
 export class PM2ProcessHandler implements iProcessHandler {
   private _logger?: iLogger;
-  private readonly _TAG = "***-> Process Handler: ";
+  private readonly TAG = "PM2ProcessHandler";
 
   constructor(logger?: iLogger) {
     this._logger = logger;
@@ -32,7 +32,7 @@ export class PM2ProcessHandler implements iProcessHandler {
   async onDestroyClass(): Promise<void> {
     this._logger?.log({
       type: "WARNING",
-      tag: this._TAG,
+      tag: this.TAG,
       msg: "Stopped Process Handler",
     });
     process.exit(0);
@@ -43,7 +43,7 @@ export class PM2ProcessHandler implements iProcessHandler {
       connect((error) => {
         this._logger?.log({
           type: !!error ? "ERROR" : "INFO",
-          tag: this._TAG,
+          tag: this.TAG,
           msg: !!error ? JSON.stringify({ ...error }) : "Running",
         });
         !!error ? reject(error) : resolve();
@@ -86,7 +86,7 @@ export class PM2ProcessHandler implements iProcessHandler {
         !!error &&
           this._logger?.log({
             type: "ERROR",
-            tag: this._TAG,
+            tag: this.TAG,
             msg: JSON.stringify(error),
           });
 
@@ -117,7 +117,7 @@ export class PM2ProcessHandler implements iProcessHandler {
         !!error &&
           this._logger?.log({
             type: "ERROR",
-            tag: this._TAG,
+            tag: this.TAG,
             msg: JSON.stringify({ ...error }),
           });
 
@@ -158,7 +158,7 @@ export class PM2ProcessHandler implements iProcessHandler {
   ): void {
     this._logger?.log({
       type: !!error ? "ERROR" : "INFO",
-      tag: this._TAG,
+      tag: this.TAG,
       msg: !!error
         ? error.toString()
         : JSON.stringify({
