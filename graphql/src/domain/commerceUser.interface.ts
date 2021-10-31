@@ -9,4 +9,5 @@ export interface CommerceUser {
   phone: string;
   rol: ROL;
   password?: string;
+  is_enable?: boolean;
 }

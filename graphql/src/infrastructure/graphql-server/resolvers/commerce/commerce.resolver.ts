@@ -79,6 +79,7 @@ const deactivateCommerce: iResolver<{ commerceId: string }> = async (
   try {
     return await deactivateCommerceController(commerceId);
   } catch (error) {
+    console.log("asdasdasdad");
     context?.logger?.log({
       tag: "Resolver: deactivateCommerce",
       type: "ERROR",

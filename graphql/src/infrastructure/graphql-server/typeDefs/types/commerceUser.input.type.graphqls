@@ -7,4 +7,5 @@ input CommerceUserInput {
     phone: String!
     rol: ROL!
     password: String
+    is_enable: Boolean
 }

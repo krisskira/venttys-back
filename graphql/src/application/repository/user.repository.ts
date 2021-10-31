@@ -57,12 +57,13 @@ export class UserRepository implements iUserRepository {
   async getUsersByDBCommerceID(DBCommerceID: string): Promise<CommerceUser[]> {
     return new Promise<CommerceUser[]>(async (resolve, reject) => {
       try {
-        const usersQueryResult = await firebaseDB.collection("users");
-        const users = await usersQueryResult
+        const users = await firebaseDB
+          .collection("users")
           .where("commerce", "==", DBCommerceID)
           .get();
         if (!users.size) {
-          reject(ErrorCodes.userNotFound);
+          // reject(ErrorCodes.userNotFound);
+          resolve([]);
           return;
         }
         const usersData = users.docs.map<CommerceUser>((u) => {
@@ -113,6 +114,7 @@ export class UserRepository implements iUserRepository {
         });
         delete data.password;
         const { password = undefined, ...user } = data;
+        delete data.password;
         await firebaseDB.collection("users").doc(userAuth.uid).set(user);
         resolve(userAuth.uid);
       } catch (error) {
@@ -129,8 +131,16 @@ export class UserRepository implements iUserRepository {
           throw ErrorCodes.requiredFieldsAreMissing;
         }
         await firebaseAuth.updateUser(auth_id, {
+          disabled: data.is_enable === undefined ? false : !data.is_enable,
           ...dataToUpdate,
         });
+        await firebaseDB
+          .collection("users")
+          .doc(auth_id)
+          .update({
+            ...dataToUpdate,
+            is_enable: data.is_enable === undefined ? false : data.is_enable,
+          });
         resolve("Completed");
       } catch (error) {
         reject(error);
@@ -149,7 +159,7 @@ export class UserRepository implements iUserRepository {
           .collection("users")
           .doc(authId)
           .get();
-        await usersResult.ref.set({
+        await usersResult.ref.update({
           enable: false,
         }); // .delete();
         resolve("Completed");

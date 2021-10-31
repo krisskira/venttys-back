@@ -6,6 +6,7 @@ type CommerceUser {
     name: String
     phone: String
     rol: ROL
+    is_enable: Boolean
 }
 
 type Mutation {

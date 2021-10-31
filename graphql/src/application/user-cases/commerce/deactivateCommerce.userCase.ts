@@ -9,12 +9,16 @@ export const deactivateCommerceUserCase = async (
 ): Promise<OperationStatus> => {
   return new Promise<OperationStatus>(async (resolver, rejects) => {
     const promiseCollection: Promise<OperationStatus>[] = [];
-    const users = await userRepository.getUsersByDBCommerceID(commerceId);
-    users.forEach((user) => {
-      promiseCollection.push(userRepository.deactivate(user.auth_id));
-    });
+    try {
+      const users = await userRepository.getUsersByDBCommerceID(commerceId);
+      users.forEach((user) => {
+        promiseCollection.push(userRepository.deactivate(user.auth_id));
+      });
+    } catch (error) {}
+
     promiseCollection.push(commerceRepository.deactivate(commerceId));
     const promisesResult = await Promise.all(promiseCollection);
+
     if (promisesResult.some((result) => result === "NoCompleted")) {
       rejects("NoCompleted");
     } else {
