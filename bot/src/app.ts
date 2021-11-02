@@ -11,28 +11,35 @@ import { OrdersRepository } from "./bot/repository/ordes.repository";
 
 doEnv();
 
-const PORT = process.env.PORT || 80;
-const ENV = <Environment>(process.env.NODE_ENV || "production");
-const PHONE = process.env.PHONE;
-const COMMERCE = process.env.COMMERCE;
-const pubSubHost = process.env.EXTERNAL_PUBSUB_SERVER;
+const {
+    PORT = 80,
+    NODE_ENV: ENV = "production",
+    PHONE,
+    COMMERCE,
+    EXTERNAL_PUBSUB_SERVER: pubSubHost,
+} = process.env;
 
 if (!PHONE || !pubSubHost || !COMMERCE) {
-    throw "\n***-> Bad implementation!!!\n"
-    + `Environment: ${ENV}\n`  
-    + `Phone: ${PHONE}\n`  
-    + `Commerce: ${COMMERCE}\n`
-    + `pubSubHost: ${pubSubHost}\n`;
+    throw (
+        "\n***-> Bad implementation!!!\n" +
+    `\tEnvironment: ${ENV}\n` +
+    `\tPhone: ${PHONE}\n` +
+    `\tCommerce: ${COMMERCE}\n` +
+    `\tpubSubHost: ${pubSubHost}\n`
+    );
 }
 
-const logger = new WistonLogger(ENV);
+const logger = new WistonLogger(<Environment>ENV);
 
-const pubSub = new KafkaPubSub({
-    host: pubSubHost,
-    topics: [],
-    clientId: PHONE,
-    dispath
-}, logger);
+const pubSub = new KafkaPubSub(
+    {
+        host: pubSubHost,
+        topics: [],
+        clientId: PHONE,
+        dispath,
+    },
+    logger
+);
 
 const ordersGenerator = new OrdersRepository();
 const bot = new StaticBot(PHONE, ordersGenerator, logger);
@@ -48,8 +55,9 @@ app.use("/public", express.static(join(__dirname, "../public")));
 app.listen(PORT, () => {
     logger.log({
         type: "DEBUG",
-        tag: `\n\n***-> WHATSAPP HANDLER: ${COMMERCE} ${PHONE}\n`,
-        msg: `API: http://localhost:${PORT}/\n` +
-            `QRCodes: http://localhost:${PORT}/public/qr-codes/${PHONE}.png\n\n`
+        tag: `\n\nWHATSAPP HANDLER:\n\t${COMMERCE} ${PHONE}`,
+        msg:
+      `\n\tAPI: http://localhost:${PORT}/` +
+      `\n\tQRCodes: http://localhost:${PORT}/public/qr-codes/${PHONE}.png\n`,
     });
 });

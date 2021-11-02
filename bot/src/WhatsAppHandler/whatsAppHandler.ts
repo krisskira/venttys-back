@@ -1,8 +1,8 @@
 import { create, CatchQR, Whatsapp, CreateConfig, StatusFind } from "venom-bot";
 import fs from "fs";
 import path from "path";
-import { iLogger } from "src/interfaces/logger.interface";
-import { iPubSub } from "src/interfaces/pubSub.interface";
+import { iLogger } from "../interfaces/logger.interface";
+import { Events, iPubSub } from "../interfaces/pubSub.interface";
 import { WhatsAppHandlerContructorArgs } from "./whatsAppHandler.interface";
 import { iBot } from "../interfaces/bot.interface";
 import { iWhatsappHandler } from "../interfaces/whatsappHandler.interface";
@@ -13,16 +13,20 @@ import { iWhatsappHandler } from "../interfaces/whatsappHandler.interface";
  *  - https://orkestral.github.io/venom/modules.html
  */
 export class WhatsAppHandler implements iWhatsappHandler {
-
-    private readonly TAG = "***-> Whatsapp Handler: "
+    private readonly TAG = "WhatsAppHandler";
 
     client!: Whatsapp;
-    bot: iBot
+    bot: iBot;
     logger: iLogger;
     pubSub: iPubSub;
     phoneNumber: string;
 
-    constructor({ phoneNumber, logger, pubSub, bot }: WhatsAppHandlerContructorArgs) {
+    constructor({
+        phoneNumber,
+        logger,
+        pubSub,
+        bot,
+    }: WhatsAppHandlerContructorArgs) {
         this.phoneNumber = phoneNumber;
         this.logger = logger;
         this.pubSub = pubSub;
@@ -32,70 +36,73 @@ export class WhatsAppHandler implements iWhatsappHandler {
             disableSpins: true,
             disableWelcome: true,
             autoClose: 0,
-            createPathFileToken: true
+            createPathFileToken: true,
         };
         create(phoneNumber, this.genQrImage, this.statusFind, config)
-            .then(client => this.asignEvents(client))
-            .catch(error => this.logger.log({
-                type: "ERROR",
-                tag: this.TAG + this.phoneNumber + "\n",
-                msg: error.meessage
-            }));
+            .then((client) => this.asignEvents(client))
+            .catch((error) =>
+                this.logger.log({
+                    type: "ERROR",
+                    tag: this.TAG,
+                    msg: `[${this.phoneNumber}] ${error.meessage}`,
+                })
+            );
     }
 
     public async start(): Promise<string> {
-        this.client.sendMessageOptions("573183919187@c.us", "Mensaje", {
-            quotedMessageId: "reply",
-        });
-        return "Handler Stopped";
+        await this.client.initialize();
+        return "Completed";
     }
 
     public async getStatus(): Promise<string> {
-        const status = await this.client.getChatById("573207284198@c.us");
-        return JSON.stringify(status);
+        const connected = await this.client.isConnected();
+        const logged = await this.client.isLoggedIn();
+        return JSON.stringify({ connected, logged });
     }
 
     public async reconect(): Promise<string> {
-        return "Handler Stopped";
+        const status = await this.client.restartService();
+        return status ? "Completed" : "Fail";
     }
 
     public async stop(): Promise<string> {
-        return "Handler Stopped";
+        const status = await this.client.close();
+        return status ? "Completed" : "Fail";
     }
 
     /**
-     * 
-     * @param status 
-     * @param session 
+     *
+     * @param status
+     * @param session
      *  - https://orkestral.github.io/venom/modules.html#statusfind
      */
     private statusFind: StatusFind = (status, session) => {
-
-        // Return 
+        // Return
         // isLogged                 || notLogged             || browserClose
-        // qrReadSuccess            || qrReadFail            || autocloseCalled 
+        // qrReadSuccess            || qrReadFail            || autocloseCalled
         // desconnectedMobile       || deleteToken           || chatsAvailable
         // deviceNotConnected       || serverWssNotConnected || noOpenBrowser
         // Create session wss return "serverClose" case server for close
         this.logger.log({
             tag: this.TAG,
             type: "DEBUG",
-            msg: `***-> Notification: (${session}) ` + status
+            msg: `***-> Notification: (${session}) ` + status,
         });
         this.pubSub.publish<{
-            status: string,
-            flag: string
+            status: string;
+            flag: string;
         }>({
-            event: "CONNECTION_STATUS",
+            event: Events.CONNECTION_STATUS,
             data: {
                 status,
-                flag: "***-> statusFind"
-            }
+                flag: "***-> statusFind",
+            },
         });
-    }
+    };
 
-    private genQrImage: CatchQR = async (...[base64Qr, , attempts]): Promise<void> => {
-
+    private genQrImage: CatchQR = async (
+        ...[base64Qr, , attempts]
+    ): Promise<void> => {
         const expression = new RegExp(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         const matches = base64Qr.match(expression);
 
@@ -107,72 +114,92 @@ export class WhatsAppHandler implements iWhatsappHandler {
         const data = Buffer.from(matches[2], "base64");
 
         fs.writeFile(
-            path.join(__dirname, "../../public/qr-codes/", `${this.phoneNumber}.png`),
-            data, "binary",
-            (err) => {
-                if (err) {
-                    this.logger.log({
-                        tag: this.TAG + this.phoneNumber,
-                        type: "ERROR",
-                        msg: err.message
-                    });
-                }
-            });
-        fs.cp(
-            path.join(__dirname, "../../public/qr-codes/", `${this.phoneNumber}.png`),
             path.join(__dirname, "../../public/qr-codes/", "code.png"),
+            data,
+            "binary",
             (err) => {
                 if (err) {
                     this.logger.log({
                         tag: this.TAG + this.phoneNumber,
                         type: "ERROR",
-                        msg: err.message
+                        msg: err.message,
                     });
                 }
             }
         );
+
         this.pubSub.publish<{
-            attempts: number,
-            image: string
+            attempts: number;
+            image: string;
+            qr: string;
         }>({
-            event: "REGEN_QR",
+            event: Events.QR_REGEN,
             data: {
                 attempts,
-                image: `${this.phoneNumber}.png`
-            }
+                image: "public/qr-codes/code.png",
+                qr: base64Qr,
+            },
         });
-    }
+    };
 
     private async asignEvents(client: Whatsapp): Promise<void> {
-
         this.client = client;
+        this.pubSub.setWhatsappInstance(client);
 
         this.client.onIncomingCall(async (call) => {
-            this.client.sendText(call.peerJid, "Lo siento, Ahora no puedo recibir llamadas.");
+            this.client.sendText(
+                call.peerJid,
+                "Lo siento, Ahora no puedo recibir llamadas."
+            );
         });
 
         this.client.onMessage((message) => {
-            if (!message.from.includes("status@broadcast") && !message.fromMe && message.isGroupMsg === false) {
-                this.bot.getResponse(message.from, message.body, async (response = undefined, buttons = undefined, list = undefined) => {
-                    try {
-                        if (buttons) {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            await this.client.sendButtons(message.from, response || "", buttons as any, "Por favor para continuar selecciona una de las siguientes opciones\n👇👇👇");
-                        } else if (list) {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            await this.client.sendListMenu(message.from, response || "", "", "Ver opciones", "Ver opciones", list as any);
-                        } else {
-                            await this.client.sendText(message.from, response || "");
+            if (
+                !message.from.includes("status@broadcast") &&
+                !message.fromMe &&
+                message.isGroupMsg === false
+            ) {
+                this.bot.getResponse(
+                    message.from,
+                    message.body,
+                    async (
+                        response = undefined,
+                        buttons = undefined,
+                        list = undefined
+                    ) => {
+                        try {
+                            if (buttons) {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                await this.client.sendButtons(
+                                    message.from,
+                                    response || "",
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    buttons as any,
+                                    "Por favor para continuar selecciona una de las siguientes opciones\n👇👇👇"
+                                );
+                            } else if (list) {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                await this.client.sendListMenu(
+                                    message.from,
+                                    response || "",
+                                    "",
+                                    "Ver opciones",
+                                    "Ver opciones",
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    list as any
+                                );
+                            } else {
+                                await this.client.sendText(message.from, response || "");
+                            }
+                        } catch (error) {
+                            this.logger.log({
+                                tag: this.TAG,
+                                type: "WARNING",
+                                msg: `Oops! [${this.phoneNumber}]\n${message.from}\n${(error as Error).message}`,
+                            });
                         }
-                    } catch (error) {
-                        console.log("***-> Ups error: ", error);
-                        this.logger.log({
-                            tag: this.TAG + this.phoneNumber,
-                            type: "WARNING",
-                            msg: "Oops! " + message.from + " " + (error as Error).message
-                        });
                     }
-                });
+                );
             }
         });
 
@@ -184,36 +211,21 @@ export class WhatsAppHandler implements iWhatsappHandler {
                 this.logger.log({
                     tag: this.TAG + this.phoneNumber,
                     type: "ERROR",
-                    msg: (error as Error).message
+                    msg: (error as Error).message,
                 });
             }
         });
 
-        [
-            "SIGINT",
-            "exit",
-            "SIGKILL",
-            "SIGTERM",
-            "SIGUSR1",
-            "SIGUSR2"
-        ].forEach(messageId => {
+        ["SIGINT", "exit", "SIGKILL", "SIGTERM"].forEach(async (messageId) => {
             process.on(messageId, async () => {
-                console.log("***-> Lanzando senia: ", messageId);
                 this.logger.log({
-                    tag: this.TAG + this.phoneNumber,
+                    tag: this.TAG,
                     type: "WARNING",
-                    msg: "Closing session"
+                    msg: `[${this.phoneNumber}] Closing session`,
                 });
-                this.client.close()
-                    .then(() => {
-                        process.exit(0);
-                    })
-                    .catch(reason => {
-                        console.log("***-> Ups! Close session error", reason);
-                        process.exit(0);
-                    });
+                await this.client.close();
+                process.exit(0);
             });
         });
     }
 }
-

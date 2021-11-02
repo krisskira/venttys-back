@@ -5,7 +5,7 @@ import { iLogger } from "../../interfaces/logger.interface";
 
 export class FixedIntentsHandler {
 
-    private readonly TAG = "***-> FixedIntentsHandler: ";
+    private readonly TAG = "FixedIntentsHandler";
     private readonly commercePhoneNumber: string;
     private readonly logger: iLogger;
     private commerceInfo!: iCommerce;

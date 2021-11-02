@@ -1,9 +1,3 @@
-// import {
-//     credential,
-//     firestore,
-//     initializeApp,
-//     ServiceAccount,
-// } from "firebase-admin";
 import firebase from "firebase-admin";
 import * as serviceAccount from "./firebase.cert.json";
 
