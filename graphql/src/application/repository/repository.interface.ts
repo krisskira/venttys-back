@@ -1,9 +1,5 @@
-import { OperationStatus } from "@appDomain/";
-
 import { OperationStatus } from "../../domain";
 import { CommerceUser } from "../../domain/commerceUser.interface";
-
-export type ObjectType = { [key: string]: unknown };
 
 export interface iRepository<T> {
   get: () => Promise<T[]>;

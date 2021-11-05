@@ -26,15 +26,18 @@ export class DockerProcessHandler implements iProcessHandler {
   private _logger?: iLogger;
   private _env: Environment;
   private _pubSubServer: string;
+  private readonly _databaseUri?: string;
 
   constructor(
     logger?: iLogger,
-    environment: Environment = "development",
-    pubSubServer = "venttys-kafka:9092"
+    environment: Environment = "production",
+    pubSubServer = "venttys-kafka:9092",
+    databaseUri?: string
   ) {
     this._logger = logger;
     this._env = environment;
     this._pubSubServer = pubSubServer;
+    this._databaseUri = databaseUri;
   }
 
   init = async (): Promise<string[]> => {
@@ -47,9 +50,11 @@ export class DockerProcessHandler implements iProcessHandler {
   };
 
   run = async (process: iProcessArgs): Promise<string[]> => {
-    const imageName = "watsapp-handler"; // "nginx";
-    const innerPort = "8000";
+    const imageName = "nginx"; // "whatsapp-handler";
     const { commerceName = "", commerceNumber = "" } = process.envVars;
+    const db = this._databaseUri
+      ? ["-e", `MONGODB_URL="${this._databaseUri}"`]
+      : [];
     const commandArguments = [
       "run",
       "--rm",
@@ -57,16 +62,13 @@ export class DockerProcessHandler implements iProcessHandler {
       "--network=venttys-net",
       "--name",
       "phone" + commerceNumber.replace(/\+/g, "_"),
-      "-p",
-      innerPort,
-      "-e",
-      `PORT="${innerPort}"`,
       "-e",
       `COMMERCE="${commerceName}"`,
       "-e",
       `NODE_ENV="${this._env}"`,
       "-e",
       `PHONE="${commerceNumber}"`,
+      ...db,
       "-e",
       `EXTERNAL_PUBSUB_SERVER="${this._pubSubServer}"`,
       imageName,

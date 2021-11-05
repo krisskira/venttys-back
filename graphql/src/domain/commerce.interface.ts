@@ -7,7 +7,7 @@ export interface CommerceBasicInfo {
 
 export type CommerceStatus = "Open" | "Close";
 export type CommerceMessagesType = "open" | "close" | "await";
-export type CommerceMessages = { [key: CommerceMessagesType]: CommerceMessage };
+export type CommerceMessages = Record<CommerceMessagesType, CommerceMessage>;
 
 export interface CommerceMessage {
   is_enable: boolean;

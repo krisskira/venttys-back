@@ -29,7 +29,7 @@ const stream = KafkaConsumer.createReadStream(
   console.log("\n***-> REST: ", JSON.parse(value.toString()), rest, "\n");
 });
 
-setInterval(() => {
-  console.log('***-> Enviando...', { topics:[topic] })
-  kafkaProducer.write(Buffer.from(JSON.stringify({ ping: "pong" + process.argv[2] })));
-}, publishSecondsTime * 1000);
+// setInterval(() => {
+//   console.log('***-> Enviando...', { topics:[topic] })
+//   kafkaProducer.write(Buffer.from(JSON.stringify({ ping: "pong" + process.argv[2] })));
+// }, publishSecondsTime * 1000);

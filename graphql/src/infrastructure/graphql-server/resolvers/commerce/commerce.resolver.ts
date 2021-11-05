@@ -1,4 +1,5 @@
 import { ApolloError } from "apollo-server-express";
+import { Error } from "mongoose";
 
 import {
   createCommerceController,
@@ -19,12 +20,13 @@ const commerces: iResolver<void> = async (...[, , context]) => {
   try {
     return await getCommercesController();
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: commerces",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -34,12 +36,13 @@ const commerceBy: iResolver<{ phoneNumber: string }> = async (
   try {
     return await getCommerceByPhoneNumberController(phoneNumber);
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: commerceBy",
       type: "ERROR",
-      msg: error.toString(),
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -49,12 +52,13 @@ const createCommerce: iResolver<{ commerceInfo: Commerce }> = async (
   try {
     return await createCommerceController(commerceInfo);
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: createCommerce",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -64,12 +68,13 @@ const updateCommerce: iResolver<{ commerceInfo: Partial<Commerce> }> = async (
   try {
     return await updateCommerceController(commerceInfo);
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: updateCommerce",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -79,13 +84,13 @@ const deactivateCommerce: iResolver<{ commerceId: string }> = async (
   try {
     return await deactivateCommerceController(commerceId);
   } catch (error) {
-    console.log("asdasdasdad");
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: deactivateCommerce",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -95,12 +100,13 @@ const usersByCommerce: iResolver<{ commerceId: string }> = async (
   try {
     return await getUsersByCommerceController(commerceId);
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: usersByCommerce",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -110,12 +116,13 @@ const enrollUserAtCommerce: iResolver<{ userInfo: CommerceUser }> = async (
   try {
     return await enrollUsersAtCommerceController(userInfo);
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: enrollUserAtCommerce",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 
@@ -125,12 +132,13 @@ const dropUserOfCommerce: iResolver<{ userId: string }> = async (
   try {
     return await removeUserOfCommerceController(userId);
   } catch (error) {
+    const errorMessage = (error as Error).message;
     context?.logger?.log({
       tag: "Resolver: dropUserOfCommerce",
       type: "ERROR",
-      msg: error.message,
+      msg: errorMessage,
     });
-    throw new ApolloError(error.toString(), "INTERNAL_SERVER_ERROR");
+    throw new ApolloError(errorMessage, "INTERNAL_SERVER_ERROR");
   }
 };
 module.exports = {
