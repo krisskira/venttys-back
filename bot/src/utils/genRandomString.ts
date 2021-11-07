@@ -1,4 +1,4 @@
-export const genRandomString = (length: number, chunk = ""): string => {
+export const genRamdonString = (length: number, chunk = ""): string => {
     const pattern = "abcdefghijklmnopqrstuvwxyz";
     return new Array(length)
         .fill(chunk)

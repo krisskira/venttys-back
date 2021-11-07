@@ -1,21 +1,41 @@
-import { Day, PaymentMethod, Time } from ".";
+export type Day =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday"
+  | "holiday";
+
+export interface PaymentMethod {
+    id: string;
+    description: string;
+    name: string;
+  }
 
 export interface iCommerceBasicInfo {
   name: string;
   phoneNumber: string;
 }
 
+export type Time = {
+  hour: number;
+  minute: number;
+  second?: number;
+};
+
 export type CommerceStatus = "Open" | "Close";
 export type CommerceMessagesType = "open" | "close" | "await";
-export type CommerceSchedule = { [key: Day]: CommerceScheduleDate };
-export type CommerceMessages = { [key: CommerceMessagesType]: CommerceMessage };
+export type CommerceSchedule = Record<Day,CommerceScheduleDate >;
+export type CommerceMessages = Record<CommerceMessagesType, CommerceMessage >;
 
-export interface iCommerceMessage {
+export interface CommerceMessage {
   enable: boolean;
   value: string;
 }
 
-export interface iCommerceScheduleDate {
+export interface CommerceScheduleDate {
   name: string;
   number_day: number;
   code: Day;
@@ -50,4 +70,5 @@ export interface iCommerce {
     sunday: CommerceScheduleDate;
     holiday: CommerceScheduleDate;
   };
+  botCode?:string;
 }

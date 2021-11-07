@@ -14,6 +14,9 @@ export interface iBotListOption {
 }
 
 export interface iBot {
-    getResponse(context: string, query: string, responder: (message?: string, buttons?: iBotButtonOption[], list?: iBotListOption) => void)
-    setMessageSender(sendMessage: (to: string, message: string) => void): void
+    getResponse(
+        context: string, 
+        query: string, 
+        responder: (message?: string, buttons?: iBotButtonOption[], list?: iBotListOption) => void
+    ): void
 }

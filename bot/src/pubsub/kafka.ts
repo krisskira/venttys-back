@@ -4,10 +4,10 @@ import {
     Producer,
     ProducerStream,
 } from "node-rdkafka";
-import { DispatchEvent, iPubSub, PubSubPayload, PubSubConstructorArgs } from "../interfaces/pubSub.interface";
+import { iPubSub, PubSubPayload, PubSubConstructorArgs, DispatchEventController } from "../interfaces/pubSub.interface";
 import { iLogger } from "../interfaces/logger.interface";
-import { genRandomString } from "../utils/genRandomString";
-import { Whatsapp } from "venom-bot";
+import { genRamdonString } from "../utils/genRandomString";
+import { iWhatsappHandler } from "src/interfaces/whatsappHandler.interface";
 
 export class KafkaPubSub implements iPubSub {
 
@@ -19,7 +19,7 @@ export class KafkaPubSub implements iPubSub {
 
     private _kafkaProducer!: ProducerStream;
     private _kafkaConsumer!: ConsumerStream;
-    private _whatsappClient!: Whatsapp;
+    private _whatsappHandler!: iWhatsappHandler;
 
     constructor(args: PubSubConstructorArgs, logger: iLogger) {
         if (!args.host || !args.clientId) throw "bad_implementation";
@@ -30,33 +30,10 @@ export class KafkaPubSub implements iPubSub {
         this.setEventListeners(args.dispath);
     }
 
-    async setWhatsappInstance(client: Whatsapp): Promise<void> {
-        this._whatsappClient = client;
-    }
-
-    async publish<T>(args: PubSubPayload<T>): Promise<void> {
-        const data: PubSubPayload<unknown> = {
-            sender: args.sender || this.clientId,
-            to: args.to || this._MAIN_TOPIC,
-            event: args.event,
-            data: args.data
-        };
-        const payload = Buffer.from(JSON.stringify(data));
-        this._kafkaProducer.write(payload, (error) => {
-            if (error) {
-                this._logger.log({
-                    type: "ERROR",
-                    tag: this.TAG,
-                    msg: `[${this.clientId}] ` + error.message,
-                });
-            }
-        });
-    }
-
     private initProducer(host: string) {
         this._kafkaProducer = Producer.createWriteStream(
             {
-                "client.id": `${this.clientId}:${genRandomString(5)}`,
+                "client.id": `${this.clientId}:${genRamdonString(5)}`,
                 "metadata.broker.list": host
             },
             {}, { topic: this._MAIN_TOPIC }
@@ -73,7 +50,7 @@ export class KafkaPubSub implements iPubSub {
                 this._logger.log({
                     type: "WARNING",
                     tag: this.TAG + ":" + this.clientId,
-                    msg: "Connection to Kafka was closed.",
+                    msg: "Connection to kafka was closed.",
                 });
             });
     }
@@ -82,7 +59,7 @@ export class KafkaPubSub implements iPubSub {
         this._kafkaConsumer = KafkaConsumer.createReadStream(
             {
                 "group.id": `kafka_${this.clientId}`,
-                "client.id": `${this.clientId}:${genRandomString(5)}`,
+                "client.id": `${this.clientId}:${genRamdonString(5)}`,
                 "metadata.broker.list": host,
             },
             {},
@@ -92,13 +69,36 @@ export class KafkaPubSub implements iPubSub {
         );
     }
 
-    private setEventListeners(dispatch: DispatchEvent) {
-        this._kafkaConsumer.on("data", ({ topic, timestamp, value: bufferPayload }) => {
+    async publish<T>(args: PubSubPayload<T>): Promise<void> {
+        const data: PubSubPayload<T> = {
+            ...args,
+            sender: args.sender || this.clientId,
+            to: args.to || this._MAIN_TOPIC,
+        };
+        const payload = Buffer.from(JSON.stringify(data));
+        this._kafkaProducer.write(payload, (error) => {
+            if (error) {
+                this._logger.log({
+                    type: "ERROR",
+                    tag: this.TAG,
+                    msg: `[${this.clientId}] ` + error.message,
+                });
+            }
+        });
+    }
+
+    private setEventListeners(dispatch: DispatchEventController) {
+        this._kafkaConsumer.on("data", ({ timestamp, value: bufferPayload }) => {
+            type tdata = Record<string, unknown>;
             const strPayload = bufferPayload.toString();
-            const { to, event, data, sender } = <PubSubPayload<unknown>>JSON.parse(strPayload);
-            if (to === this.clientId) {
-                dispatch({
-                    event,
+            const { to, event, data, sender } = <PubSubPayload<tdata>>JSON.parse(strPayload);
+            if (sender !== this.clientId) {
+                this._logger.log({
+                    type: "DEBUG",
+                    tag: this.TAG,
+                    msg: `timestamp: ${new Date(timestamp).toISOString()}\n${strPayload}`
+                });
+                dispatch<tdata>({
                     payload: {
                         to,
                         event,
@@ -108,15 +108,8 @@ export class KafkaPubSub implements iPubSub {
                     context: {
                         logger: this._logger,
                         publish: this.publish,
-                        whatsappClient: this._whatsappClient
+                        whatsappHandler: this._whatsappHandler
                     }
-                });
-                this._logger.log({
-                    type: "DEBUG",
-                    tag: this.TAG,
-                    msg:
-                        `topic: ${topic} timestamp: ${new Date(timestamp).toISOString()}` +
-                        "\n" + strPayload,
                 });
             }
         });
@@ -129,5 +122,9 @@ export class KafkaPubSub implements iPubSub {
             })
         );
 
+    }
+
+    async setWhatsappInstance(client: iWhatsappHandler): Promise<void> {
+        this._whatsappHandler = client;
     }
 }

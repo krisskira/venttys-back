@@ -9,6 +9,7 @@ RUN npm run build
 FROM node:14-slim
 
 WORKDIR /home/app
+
 RUN apt-get update && \
     apt-get install -yq \
     curl nano gconf-service libasound2 libatk1.0-0 libc6 libcairo2 \
@@ -24,11 +25,10 @@ COPY --from=builder /home/build/build /home/app/build
 COPY --from=builder /home/build/package.json /home/app
 RUN npm install --production
 
-ENV NODE_ENV=''
 ENV PHONE=''
 ENV COMMERCE=''
+ENV NODE_ENV='production'
 ENV EXTERNAL_PUBSUB_SERVER='kafka:9092'
-ENV PORT=80
-EXPOSE 80
-VOLUME ["/home/app/public/qr-codes", "/home/app/tokens"]
+ENV DB_CONNECTION_STRING="mongodb://venttys:dmVudHR5cw@venttys-mongo:27017/venttys-bot?authSource=admin"
+VOLUME ["/home/app/public", "/home/app/tokens"]
 CMD ["npm", "start"]

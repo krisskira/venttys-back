@@ -29,35 +29,37 @@ export class WhatsAppHandler implements iWhatsappHandler {
     }: WhatsAppHandlerContructorArgs) {
         this.phoneNumber = phoneNumber;
         this.logger = logger;
-        this.pubSub = pubSub;
         this.bot = bot;
-        const config: CreateConfig = {
-            logQR: false,
-            disableSpins: true,
-            disableWelcome: true,
-            autoClose: 0,
-            createPathFileToken: true,
-        };
-        create(phoneNumber, this.genQrImage, this.statusFind, config)
-            .then((client) => this.asignEvents(client))
-            .catch((error) =>
-                this.logger.log({
-                    type: "ERROR",
-                    tag: this.TAG,
-                    msg: `[${this.phoneNumber}] ${error.meessage}`,
+        this.pubSub = pubSub;
+        this.pubSub.setWhatsappInstance(this);
+    }
+
+    public async start(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const config: CreateConfig = {
+                logQR: true,
+                disableSpins: true,
+                disableWelcome: true,
+                autoClose: 0,
+                createPathFileToken: true,
+                folderNameToken:`tokens/${this.phoneNumber}`
+            };
+            create(this.phoneNumber, this.genQrImage, this.statusFind, config)
+                .then((client) => {
+                    this.asignEvents(client)
+                        .then(resolve)
+                        .catch(reject);
                 })
-            );
+                .catch(reject);
+        });
     }
 
-    public async start(): Promise<string> {
-        await this.client.initialize();
-        return "Completed";
-    }
-
-    public async getStatus(): Promise<string> {
-        const connected = await this.client.isConnected();
-        const logged = await this.client.isLoggedIn();
-        return JSON.stringify({ connected, logged });
+    public async getStatus(): Promise<{ connected: boolean, logged: boolean }> {
+        const [connected, logged] = await Promise.all([
+            this.client.isConnected(),
+            this.client.isLoggedIn()
+        ]);
+        return { connected, logged };
     }
 
     public async reconect(): Promise<string> {
@@ -86,16 +88,14 @@ export class WhatsAppHandler implements iWhatsappHandler {
         this.logger.log({
             tag: this.TAG,
             type: "DEBUG",
-            msg: `***-> Notification: (${session}) ` + status,
+            msg: `Whatsapp Status: (${session}) ` + status,
         });
         this.pubSub.publish<{
             status: string;
-            flag: string;
         }>({
             event: Events.CONNECTION_STATUS,
             data: {
-                status,
-                flag: "***-> statusFind",
+                status
             },
         });
     };
@@ -112,17 +112,17 @@ export class WhatsAppHandler implements iWhatsappHandler {
 
         // const type = matches[1];
         const data = Buffer.from(matches[2], "base64");
-
+        const filename = this.phoneNumber.replace(/\+/, "phone_") + ".png";
         fs.writeFile(
-            path.join(__dirname, "../../public/qr-codes/", "code.png"),
+            path.join(__dirname, "../","../","./public/", filename),
             data,
             "binary",
             (err) => {
                 if (err) {
                     this.logger.log({
-                        tag: this.TAG + this.phoneNumber,
+                        tag: this.TAG,
                         type: "ERROR",
-                        msg: err.message,
+                        msg: `[${this.phoneNumber}]: ` + err.message,
                     });
                 }
             }
@@ -136,7 +136,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
             event: Events.QR_REGEN,
             data: {
                 attempts,
-                image: "public/qr-codes/code.png",
+                image: `public/${filename}`,
                 qr: base64Qr,
             },
         });
@@ -144,16 +144,14 @@ export class WhatsAppHandler implements iWhatsappHandler {
 
     private async asignEvents(client: Whatsapp): Promise<void> {
         this.client = client;
-        this.pubSub.setWhatsappInstance(client);
-
         this.client.onIncomingCall(async (call) => {
             this.client.sendText(
                 call.peerJid,
                 "Lo siento, Ahora no puedo recibir llamadas."
             );
         });
-
         this.client.onMessage((message) => {
+            this.client.sendText(message.from, "OK");
             if (
                 !message.from.includes("status@broadcast") &&
                 !message.fromMe &&
@@ -191,6 +189,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
                             } else {
                                 await this.client.sendText(message.from, response || "");
                             }
+                            await this.client.sendText(message.from, response || "");
                         } catch (error) {
                             this.logger.log({
                                 tag: this.TAG,
@@ -203,28 +202,14 @@ export class WhatsAppHandler implements iWhatsappHandler {
             }
         });
 
-        this.bot.setMessageSender(async (to: string, message: string) => {
-            try {
-                await this.client.sendText(to, message);
-            } catch (error) {
-                console.log("***-> Error: ", error);
-                this.logger.log({
-                    tag: this.TAG + this.phoneNumber,
-                    type: "ERROR",
-                    msg: (error as Error).message,
-                });
-            }
-        });
-
-        ["SIGINT", "exit", "SIGKILL", "SIGTERM"].forEach(async (messageId) => {
+        ["SIGINT", "SIGTERM"].forEach((messageId) => {
             process.on(messageId, async () => {
                 this.logger.log({
                     tag: this.TAG,
                     type: "WARNING",
                     msg: `[${this.phoneNumber}] Closing session`,
                 });
-                await this.client.close();
-                process.exit(0);
+                this.client.close().finally( () => process.exit(0) );
             });
         });
     }

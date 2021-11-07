@@ -1,36 +1,5 @@
-import { Whatsapp } from "venom-bot";
 import { iLogger } from "./logger.interface";
-
-export interface iPubSub {
-    publish<T>(args: PubSubPayload<T>): Promise<void>;
-    setWhatsappInstance(client: Whatsapp):Promise<void>;
-}
-
-export interface PubSubConstructorArgs {
-    host: string,
-    clientId: string,
-    topics: string[],
-    dispath: DispatchEvent
-}
-
-export type DispatchEvent = <T>(args: iDispatchEventArgs<T>) => void
-
-export interface iDispatchEventArgs<T> {
-    event: Events,
-    payload: PubSubPayload<T>,
-    context: {
-        logger: iLogger;
-        publish: (args: PubSubPayload<unknown>) => Promise<void>;
-        whatsappClient: Whatsapp;
-    }
-}
-
-export interface PubSubPayload<T> {
-    sender?: string,
-    to?: string,
-    event: Events,
-    data: T
-}
+import { iWhatsappHandler } from "./whatsappHandler.interface";
 
 export enum Events {
     STATUS = "SUBSC:TOPIC:WA:STATUS",
@@ -41,16 +10,35 @@ export enum Events {
     CONNECTION_STATUS = "CONNECTION_STATUS",
 }
 
-export type DispatchEventController<T> = (args: DispatchEventControllerArgs<T>) => Promise<void>
-
-export type DispatchEventControllerArgs<T> = {
-    context: {
-        logger: iLogger,
-        whatsappClient: Whatsapp,
-        publish: <T>(args: PubSubPayload<T>) => Promise<void>,
-    },
-    payload: T
+export interface PubSubPayload<T> {
+    sender?: string,
+    to?: string,
+    event: Events,
+    data: T
 }
 
+export type PubSubPublishFC = <T>(args: PubSubPayload<T>) => Promise<void>;
 
+export interface iPubSub {
+    publish: PubSubPublishFC;
+    setWhatsappInstance(client: iWhatsappHandler):Promise<void>;
+}
+
+export interface PubSubConstructorArgs {
+    host: string,
+    clientId: string,
+    topics: string[],
+    dispath: DispatchEventController
+}
+
+export interface DispatchEventArgs<T> {
+    payload: PubSubPayload<T>,
+    context: {
+        logger: iLogger;
+        whatsappHandler: iWhatsappHandler;
+        publish: PubSubPublishFC;
+    }
+}
+
+export type DispatchEventController = <T>(args: DispatchEventArgs<T>) => Promise<void>
 

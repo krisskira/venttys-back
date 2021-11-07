@@ -1,29 +1,30 @@
-import { iBotIntent, intents as botModel } from "./fixed.intents.model";
+import BotModel from "../../database/models/bot.model";
 import { firebaseDB } from "../../firebase";
 import { iCommerce } from "../../interfaces/commerce.interface";
 import { iLogger } from "../../interfaces/logger.interface";
+import { BotIntent } from "../domain/bot-intent.entity";
 
-export class FixedIntentsHandler {
+export class IntentsHandler {
 
-    private readonly TAG = "FixedIntentsHandler";
+    private readonly TAG = "IntentsHandler";
     private readonly commercePhoneNumber: string;
     private readonly logger: iLogger;
     private commerceInfo!: iCommerce;
-    // private firebaseCommerceRef: FirebaseFirestore.DocumentReference;
-    private intents: iBotIntent[]
+    private intents: BotIntent[] = [];
 
-    constructor({ context, intents, logger }: iFixedIntentsHandlerArgs) {
+    constructor({ context, logger }: IntentsHandlerArgs) {
         this.logger = logger;
         this.commercePhoneNumber = context;
-
-        /** 
-         * TODO: the intents can be pass to props or get from commerce collection
-        */
-        this.intents = intents ? intents : botModel;
         this.getCommerceInfo(this.commercePhoneNumber)
-            .then(commerceData => {
+            .then( async (commerceData) => {
                 this.commerceInfo = commerceData.info;
-                // this.firebaseCommerceRef = commerceData.ref
+                const botCode = this.commerceInfo.botCode || "default";
+                const bot = await BotModel.findOne({code: botCode}).populate<BotIntent>("intents");
+                console.log(bot);
+                if(!bot) {
+                    throw "BotCode not found";
+                }
+                this.intents = bot.toObject().intents as unknown as BotIntent[];
             })
             .catch(error => {
                 this.logger.log({
@@ -34,7 +35,7 @@ export class FixedIntentsHandler {
             });
     }
 
-    async botQueryByTag(args: BotQueryArgs) {
+    async botQueryByTag(args: BotQueryArgs): Promise<any> {
 
         // TODO: Debe crearce una session en el momento en eque el usuario llegue
         // TODO: a la parte de Ordenar pedido. y antes de continuara debera ser 
@@ -142,9 +143,8 @@ interface ReplaceVarsArgs {
     paragraph: string,
     commerceInfo: iCommerce
 }
-interface iFixedIntentsHandlerArgs {
+interface IntentsHandlerArgs {
     context: string,
-    intents?: iBotIntent[],
     logger: iLogger
 }
 

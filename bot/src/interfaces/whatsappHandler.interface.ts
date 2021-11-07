@@ -1,6 +1,9 @@
 export interface iWhatsappHandler {
-    start():Promise<string>
-    getStatus(): Promise<string> 
+    start():Promise<void>
+    getStatus(): Promise<{
+        connected: boolean,
+        logged: boolean
+    }>
     reconect(): Promise<string> 
     stop():Promise<string> 
 }

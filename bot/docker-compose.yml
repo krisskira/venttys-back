@@ -1,24 +1,30 @@
 version: "3.9"
 services:
   venttys-wh:
-    image: venttys-wh
+    image: whatsapp-handler
     build: .
-    container_name: watsapp-handler
+    container_name: whatsapp-handler
     volumes: 
-      - ./public/qr-codes:/home/app/public/qr-codes
-      - ./tokens:/home/app/tokens
+      - ./public:/home/app/public
+      # - ./tokens:/home/app/tokens
     environment: 
-      - PHONE=+573183919187
-      - COMMERCE=Antonia
-      - NODE_ENV=development
-      - PORT=8003
-      - EXTERNAL_PUBSUB_SERVER=kafka:9092
-    ports: 
-      - 8003:8003
-    hostname: watsapp-handler
+      - ENV="development"
+      - PHONE="+573185449408"
+      - COMMERCE="Memo Comidas Rapidas"
+      # LOCALHOST
+      # - EXTERNAL_PUBSUB_SERVER="localhost:9093"
+      # - DB_CONNECTION_STRING="mongodb://venttys:dmVudHR5cw@localhost:27017/venttys-bot?authSource=admin"
+      # DOCKER (Default)
+      # - EXTERNAL_PUBSUB_SERVER=kafka:9092
+      # - DB_CONNECTION_STRING="mongodb://venttys:dmVudHR5cw@venttys-mongo:27017/venttys-bot?authSource=admin"
     working_dir: /home/app
     networks:
       - venttys-net
+
+volumes:
+  venttys-wh-tokens:
+  venttys-wh-public:
+
 networks: 
   venttys-net:
     name: venttys-net

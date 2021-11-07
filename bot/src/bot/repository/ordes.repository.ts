@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { genRandomString } from "../../utils/genRandomString";
+import { genRamdonString } from "../../utils/genRandomString";
 import { iOrder, iOrderRepository } from "../../interfaces/orders.repository.interface";
 
 export class OrdersRepository implements iOrderRepository {
@@ -29,7 +29,7 @@ export class OrdersRepository implements iOrderRepository {
                 client: "",
                 commerce: "",
                 finish_time: Date.now(),
-                id: genRandomString(5),
+                id: genRamdonString(5),
                 phone: "",
                 products_detail: [],
                 status: "cooking",

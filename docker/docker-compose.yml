@@ -6,8 +6,15 @@ networks:
 
 volumes:
   venttys-zookeeper:
+    name: venttys-zookeeper
   venttys-kafka:
+    name: venttys-kafka
   venttys-mongo:
+    name: venttys-mongo
+  venttys-wh-tokens:
+    name: venttys-wh-tokens
+  venttys-wh-public:
+    name: venttys-wh-public
 
 services:
 

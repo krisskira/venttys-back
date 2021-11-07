@@ -1,4 +1,5 @@
 export type OrderStatus = "cooking" | "waiting" | "finish"
+
 export interface iOrder {
     address: string;
     cancel_reason: string;
@@ -23,6 +24,6 @@ export interface iProductDetail {
 }
 
 export interface iOrderRepository {
-    listen: (cb: (order: iORder) => void) => Promise<void>;
+    listen: (cb: (order: iOrder) => void) => Promise<void>;
     generate(order: iOrder): Promise<void>;
 }

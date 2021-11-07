@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { iLogger } from "src/interfaces/logger.interface";
 import { iBot, iBotButtonOption, iBotListOption } from "../interfaces/bot.interface";
 import { iOrder, iOrderRepository } from "../interfaces/orders.repository.interface";
-import { FixedIntentsHandler } from "./repository/fixed.intents.repository";
+import { IntentsHandler } from "./repository/fixed.intents.repository";
 
 export class StaticBot implements iBot {
 
-    private readonly intentResolver: FixedIntentsHandler;
+    private readonly intentResolver: IntentsHandler;
     private readonly commercePhoneNumber: string;
     private readonly genOrders: iOrderRepository;
     private readonly logger: iLogger;
@@ -15,7 +16,7 @@ export class StaticBot implements iBot {
         this.commercePhoneNumber = context;
         this.genOrders = genOrders;
         this.logger = logger;
-        this.intentResolver = new FixedIntentsHandler({
+        this.intentResolver = new IntentsHandler({
             context,
             logger
         });
@@ -38,19 +39,19 @@ export class StaticBot implements iBot {
 
         if (answerOption.length > 0) {
             if (botResponse.dialogResponse.response_options_type === "button") {
-                options = answerOption.map<iBotButtonOption>(options => ({
-                    buttonText: {
-                        displayText: options
-                    }
-                }));
-                // TODO: add list on last function parameter
-                responder(answer, options as iBotButtonOption[]);
+                // options = answerOption.map<iBotButtonOption>((o:string) => ({
+                //     buttonText: {
+                //         displayText: o
+                //     }
+                // });
+                // // TODO: add list on last function parameter
+                // responder(answer, options as iBotButtonOption[]);
             }
 
             else if (botResponse.dialogResponse.response_options_type === "list") {
                 options = {
                     title: answer,
-                    rows: answerOption.map( option  => ({
+                    rows: answerOption.map( (option: any)  => ({
                         title: option
                     }))
                 } as iBotListOption;

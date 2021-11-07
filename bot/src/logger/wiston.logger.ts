@@ -18,21 +18,20 @@ export class WistonLogger implements iLogger {
                 maxFiles: 5,
                 format: format.combine(
                     format.timestamp(),
-                    format.simple(),
-                    format.prettyPrint()
+                    format.printf(
+                        ({ level, message, timestamp }) =>
+                            `[${timestamp}] [${level}]:\n${message}\n`
+                    ),
                 ),
             };
         };
         this._logger = createLogger({
             level: "debug",
-            format: format.combine(
-                format.colorize(),
-                format.simple()
-            ),
+            format: format.combine(format.simple()),
             transports: [
-                new transports.File(transporOptionBuilder("info")),
-                new transports.File(transporOptionBuilder("warn")),
                 new transports.File(transporOptionBuilder("error")),
+                new transports.File(transporOptionBuilder("warn")),
+                new transports.File(transporOptionBuilder("info")),
             ],
         });
 
@@ -40,7 +39,7 @@ export class WistonLogger implements iLogger {
             this._logger.add(
                 new transports.Console({
                     level: "debug",
-                    format: format.combine(format.simple()),
+                    format: format.combine(format.colorize(), format.simple()),
                 })
             );
         }

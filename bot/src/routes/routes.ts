@@ -1,29 +1,23 @@
-import { Router } from "express";
-import { DispatchEvent, Events } from "../interfaces/pubSub.interface";
-import { start, stop, reconnect, status, getStatusEventUserCase, setReconnectEventUserCase, getQRRegenEventUserCase } from "../userCases";
+import { DispatchEventController, Events } from "../interfaces/pubSub.interface";
+import { getStatusEventUserCase, whatsappReconnectEventUserCase, whatsappStopEventUserCase } from "../userCases";
 
-export const router = Router();
-router.get("/start", start);
-router.get("/stop", stop);
-router.get("/reconect", reconnect);
-router.get("/status", status);
-
-export const dispathEvents: DispatchEvent = ({ event, payload, context }) => {
-    console.log("***-> Evento: ", event);
-    console.log("***-> payload: ", payload.data);
-    switch (event) {
+export const dispatchEvents: DispatchEventController = async ({ payload, context: { logger, publish, whatsappHandler } }) => {
+    logger.log({
+        type: "DEBUG",
+        tag: "Router-Dispatcher",
+        msg: JSON.stringify(payload)
+    });
+    switch (payload.event) {
     case Events.CONNECTION_STATUS:
     case Events.STATUS:
-        getStatusEventUserCase({context, payload});
-        break;
-    case Events.QR_REGEN:
-        getQRRegenEventUserCase({context, payload});
+        getStatusEventUserCase({ whatsappHandler, publish, payload });
         break;
     case Events.RECONNECT:
-        setReconnectEventUserCase({context, payload});
+        whatsappReconnectEventUserCase({ whatsappHandler, publish, payload });
         break;
-    default:
-        console.log("***-> Dispara el evento: ", event);
-        console.log("***-> Parametros: ", {context, payload});
+    case Events.CLOSE_SECTION:
+    case Events.END:
+        whatsappStopEventUserCase({ whatsappHandler, publish, payload });
+        break;
     }
 };

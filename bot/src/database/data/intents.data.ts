@@ -2,21 +2,9 @@
  * EMOGIPEDIA: https://emojipedia.org/
  */
 
-export interface iBotIntent {
-    tag: string,
-    pattern: string[],
-    variables: string[],
-    response: string[],
-    response_options_from_commerce?: {
-        response_code: string,
-        response_options_type?: "list" | "button"
-    },
-    response_options: string[],
-    next_tags: string[],
-    response_options_type?: "list" | "button"
-}
+import { BotIntent } from "../../bot/domain/bot-intent.entity";
 
-export const intents: iBotIntent[] = [
+export const intents: BotIntent[] = [
     {
         tag: "Saludo",
         pattern: [],
@@ -104,11 +92,11 @@ export const intents: iBotIntent[] = [
     {
         tag: "ConfirmarPedido",
         pattern: ["✅ Confirmar el pedido"],
-        variables: ["temp_products_selected", "temp_parcial_value"],
+        variables: ["temp_products_selected", "temp_partial_value"],
         response: [
             "Tu pedido es:",
             "##temp_products_selected##",
-            "Valor Parcial: ##temp_parcial_value##",
+            "Valor Parcial: ##temp_partial_value##",
             "Por favor indicanos tu nombre y apellidos.",
         ],
         response_options: [],
@@ -152,13 +140,13 @@ export const intents: iBotIntent[] = [
     {
         tag: "PedidoExitoso",
         pattern: [],
-        variables: ["temp_clientName", "temp_products_selected", "temp_parcial_value", "temp_accountNumbers"],
+        variables: ["temp_clientName", "temp_products_selected", "temp_partial_value", "accountNumbers"],
         response: [
             "Gracias ##clientName## por su compra. Tu pedido es:",
             "##temp_products_selected##",
-            "Valor Total: ##temp_parcial_value## + Costo de envío.",
+            "Valor Total: ##temp_partial_value## + Costo de envío.",
             "Su pedido está en proceso de confirmación. En un minutos te escribiremos nuevamente para indicarte la confirmación del pedido y el tiempo estimado de entrega",
-            "Nuestros núermos de cuenta para la transferencia son: \n\n##temp_accountNumbers##"
+            "Nuestros núermos de cuenta para la transferencia son: \n\n##accountNumbers##"
         ],
         response_options: [],
         next_tags: [],
