@@ -40,7 +40,8 @@ export class StaticBot implements iBot {
 
         const {
             response_options_type: responseOptionTypeFromCommerce = undefined,
-            response: responseOptionsFromCommerce = []
+            response: responseOptionsFromCommerce = [],
+            groupBy: listItemsGroupBy = ""
         } = response_options_from_commerce || {};
 
         let messageTitle = "";
@@ -59,7 +60,7 @@ export class StaticBot implements iBot {
                 break;
             case "single":
             default:
-                if(responseOptionTypeFromCommerce){
+                if (responseOptionTypeFromCommerce) {
                     [messageTitle] = responseMessage;
                     messageSubTitle = responseMessage.slice(1).join("\n") || defaultSubTitle;
                 } else {
@@ -108,26 +109,42 @@ export class StaticBot implements iBot {
             case "list":
                 commercelistOptions = responseOptionsFromCommerce
                     .map<BotOptionList>(responseOption => {
-                        console.log("***-> Objecto: ", responseOption);
+                        const defaultTitle = "Seleccione una opción";
+
                         if (typeof responseOption === "string") {
                             return {
-                                title: "Seleccione una opción",
+                                title: defaultTitle,
                                 rows: [{ title: `${responseOption}`, description: "text" }]
                             };
                         }
-                        // let rows: BotOptionList["rows"] = [];
-                        // rows = responseOptions
-                        //     .map<{ title: string, description?: string }>(responseOption => ({
-                        //         title: responseOption,
-                        //         description: undefined
-                        //     }));
-                        //  const 
+
+                        const listItem = (responseOption as unknown as Array<Record<string, string | number>>)
+                            .reduce((acc, item) => {
+                                const option = { ...acc, ...item };
+                                return { ...option };
+                            }, {} as Record<string, string | number>);
+
+                        const title = `${listItem[listItemsGroupBy] || defaultTitle}`;
+                        console.log("***-> Delete: ", delete listItem[listItemsGroupBy]);
+
+                        console.log("***->" + listItemsGroupBy, "\nTitle", title, "\nContent:", listItem);
+
+                        const [keyTitle, ...keyContent] = Object.keys(listItem);
+                        const description = keyContent.map((key) => listItem[key]).join(".\n");
                         return {
-                            title: "Titulo de la categoria",
-                            rows: []
+                            title,
+                            rows: [{ title: `${listItem[keyTitle]}`, description: description }]
                         };
-                    });
-                //.reduce( (a,i) => [...a, i], [] as any[]);
+                    })
+                    .reduce((list, item) => {
+                        const index = list.findIndex(_item => _item.title === item.title);
+                        if (index >= 0) {
+                            list[index].rows = [...list[index].rows, ...item.rows];
+                        } else {
+                            list = [...list, item];
+                        }
+                        return list;
+                    }, [] as BotOptionList[]);
                 listOptions = [...listOptions, ...commercelistOptions];
                 break;
         }
@@ -136,59 +153,6 @@ export class StaticBot implements iBot {
             title: messageTitle,
             subTitle: messageSubTitle
         }, listButtons, listOptions);
-
-        // let options: BotOptionList | BotOptionButton[];
-
-        // if (responseOptions.length > 0) {
-        //     if (responseOptionsType === "button") {
-        //         options = responseOptions.map<BotOptionButton>((o: string) => ({
-        //             buttonText: {
-        //                 displayText: o,
-        //             }
-        //         })) as BotOptionButton[];
-
-        //         if(responseOptionsFromCommerce.length){
-        //             if(responseOptionTypeFromCommerce === "list"){
-        //                 const listOptions = {
-        //                     title: textMessage,
-        //                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        //                     rows: responseOptionsFromCommerce.map((option: any) => ({
-        //                         title: "Opcion From Commerce", //option,
-        //                         description: "Descripcion por item from Commerce"
-        //                     })),
-        //                     description: "Descripcion 1 from Commerce"
-        //                 } as BotOptionList;
-        //                 responder(textMessage, options , listOptions);
-        //             }else {
-        //                 // TODO: Merchar las respuestas buttons desde el comercio 
-        //                 // Con las existentes.
-        //                 responder(textMessage, options, undefined);
-        //             }
-        //         } else {
-        //             responder(textMessage, options , undefined);
-        //         }
-        //     }
-
-        //     else if (responseOptionsType === "list") {
-        //         // TODO: Mapear sobre la intentcion
-        //         options = {
-        //             title: textMessage,
-        //             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        //             rows: responseOptions.map((option: any) => ({
-        //                 title: "Titulo lista From Intent", // option,
-        //                 description: "Descripcion por item ",
-        //             })),
-        //             description: "Descripcion 1"
-        //         } as BotOptionList;
-        //         responder(textMessage, undefined, options);
-        //     } else {
-        //         responder(textMessage);
-        //     }
-        //     return;
-        // } else if(responseOptionsFromCommerce.length){
-        //     console.log("TODO: Si no tiene response options, verificar si tiene respuiestas desd comercio");
-        // }
-        // responder(textMessage);
     }
 
     // private sendMessage?: (to: string, message: string) => void;

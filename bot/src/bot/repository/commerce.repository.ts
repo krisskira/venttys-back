@@ -16,10 +16,11 @@ export class CommerceRepository {
             .doc(phoneNumber);
         this.phoneNumber = phoneNumber;
         this.logger = logger;
-        this.firebaseCommerceReference.collection("commerces")
-            .doc(phoneNumber)
-            .collection("orders").onSnapshot((snapshot) => {
-                console.log("Documento Cambio: ", snapshot.docs.map(d => d.data()));
+        this.firebaseCommerceReference
+            .collection("orders")
+            //.doc("+573183919187:1637400444683")
+            .onSnapshot((snapshot) => {
+                console.log("Documento Cambio: ", snapshot.docChanges().map( d => d.doc.data()) );//.map(d => d.data()));
             }, (error) => {
                 console.log("***-> Ups! Error: ", error);
             });
@@ -73,7 +74,6 @@ export class CommerceRepository {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any   
         const paymentMethods = (await this.getInfo()).payment_methods;
         const methods = paymentMethods.map(({ name }) => name);
-        console.log("***-> X->Payment methods: ", methods);
         return [...methods];
     }
 

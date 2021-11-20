@@ -272,12 +272,13 @@ export class IntentsHandler implements IntentsHandlerRepository {
             if (entity.isSessionVar) {
                 // Models: single | array
                 // Variables => string | string[]
-                const { content } = args.sessionVars
+                const { content, ...otherContent } = args.sessionVars
                     .find(_var => _var.key === entity.code) || {};
                 // TODO: Calculate math operation entity.fromMathOperations.
-                varContent[variable] = content || entity.defaultValue || "undefined content";
+                varContent[variable] = content || entity.defaultValue || "********";
                 console.log("Variables de session: ",args.sessionVars);
                 console.log("Entidad: ",entity);
+                console.log("Content Session: ", otherContent);
             } else {
                 // Models: single | object | array | array-object
                 // Variables => string[] | Record<string, string|number>[]

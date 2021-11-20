@@ -4,7 +4,8 @@ import { BotIntent } from "../../bot/domain/bot-intent.entity";
 const ResponseOptionsFromCommerceSchema = new Schema({
     response_code: String,
     response_options_type: { type: String, enum: ["list", "button"]},
-    response: {type: [String], default: []}
+    response: {type: [String], default: []},
+    groupBy: {type: String, required: false}
 });
 
 export const BotIntentSchema = new Schema<BotIntent>({

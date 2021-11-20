@@ -209,7 +209,7 @@ export const intents: BotIntent[] = [
     },
     {
         tag: "NeedHuman",
-        pattern: ["PERSONA"],
+        pattern: ["PERSONA", "persona"],
         variables: [],
         response: [
             "Uno de nuestros representantes se pondrá en contacto con usted en breve."
