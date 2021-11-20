@@ -9,10 +9,10 @@ export type Day =
   | "holiday";
 
 export interface PaymentMethod {
-    id: string;
-    description: string;
-    name: string;
-  }
+  id: string;
+  description: string;
+  name: string;
+}
 
 export interface iCommerceBasicInfo {
   name: string;
@@ -27,11 +27,11 @@ export type Time = {
 
 export type CommerceStatus = "Open" | "Close";
 export type CommerceMessagesType = "open" | "close" | "await";
-export type CommerceSchedule = Record<Day,CommerceScheduleDate >;
-export type CommerceMessages = Record<CommerceMessagesType, CommerceMessage >;
+export type CommerceSchedule = Record<Day, CommerceScheduleDate>;
+export type CommerceMessages = Record<CommerceMessagesType, CommerceMessage>;
 
 export interface CommerceMessage {
-  enable: boolean;
+  is_enable: boolean;
   value: string;
 }
 
@@ -41,7 +41,54 @@ export interface CommerceScheduleDate {
   code: Day;
   close: Time;
   open: Time;
-  enable: boolean;
+  openString?: string;
+  closeString?: string;
+  is_enable: boolean;
+}
+
+export interface Product {
+  description: string;
+  discount_price: number;
+  image_url: string;
+  name: string;
+  normal_price: number;
+  category: {
+    name: string;
+    description: string;
+  }
+  categoryStrig?: string;
+}
+
+export interface Order {
+  address: string;
+  cancel_reason?: string | null;
+  client: string;
+  close_at: Date;
+  commerce: string;
+  created_at: Date;
+  phone: string;
+  products_detail: OrderDetail[];
+  status: "cooking" | "waiting" | "finish" | "canceled";
+  total: number;
+  zone: string;
+}
+
+export interface OrderDetail {
+  note: string;
+  prodcut_id: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+}
+
+export interface Zones {
+  name: string;
+  price: number;
+}
+
+export interface BankAccount {
+  name: string;
+  number: string;
 }
 
 export interface iCommerce {
@@ -49,9 +96,9 @@ export interface iCommerce {
   name: string;
   phone: string;
   address: string;
-  state: string;
+  is_enable: string;
   enable: boolean;
-  paymentMehods: PaymentMethod[];
+  payment_methods: PaymentMethod[];
   delivery_price: number;
   delivery_time: string;
   commerce_status: CommerceStatus;
@@ -70,5 +117,6 @@ export interface iCommerce {
     sunday: CommerceScheduleDate;
     holiday: CommerceScheduleDate;
   };
-  botCode?:string;
+  botCode?: string;
+  assistance_name?: string;
 }

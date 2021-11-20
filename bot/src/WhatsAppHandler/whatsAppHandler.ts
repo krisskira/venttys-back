@@ -19,39 +19,27 @@ export class WhatsAppHandler implements iWhatsappHandler {
     bot: iBot;
     logger: iLogger;
     pubSub: iPubSub;
-    phoneNumber: string;
+    commercePhoneNumber: string;
 
-    constructor({
-        phoneNumber,
-        logger,
-        pubSub,
-        bot,
-    }: WhatsAppHandlerContructorArgs) {
-        this.phoneNumber = phoneNumber;
-        this.logger = logger;
-        this.bot = bot;
-        this.pubSub = pubSub;
+    constructor(args: WhatsAppHandlerContructorArgs) {
+        this.bot = args.bot;
+        this.logger = args.logger;
+        this.pubSub = args.pubSub;
+        this.commercePhoneNumber = args.commercePhoneNumber;
         this.pubSub.setWhatsappInstance(this);
     }
 
     public async start(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const config: CreateConfig = {
-                logQR: true,
-                disableSpins: true,
-                disableWelcome: true,
-                autoClose: 0,
-                createPathFileToken: true,
-                folderNameToken:`tokens/${this.phoneNumber}`
-            };
-            create(this.phoneNumber, this.genQrImage, this.statusFind, config)
-                .then((client) => {
-                    this.asignEvents(client)
-                        .then(resolve)
-                        .catch(reject);
-                })
-                .catch(reject);
-        });
+        const config: CreateConfig = {
+            logQR: true,
+            disableSpins: true,
+            disableWelcome: true,
+            autoClose: 0,
+            createPathFileToken: true,
+            folderNameToken: `tokens/${this.commercePhoneNumber}`
+        };
+        const client = await create(this.commercePhoneNumber, this.genQrImage, this.statusFind, config);
+        this.asignEvents(client);
     }
 
     public async getStatus(): Promise<{ connected: boolean, logged: boolean }> {
@@ -112,9 +100,9 @@ export class WhatsAppHandler implements iWhatsappHandler {
 
         // const type = matches[1];
         const data = Buffer.from(matches[2], "base64");
-        const filename = this.phoneNumber.replace(/\+/, "phone_") + ".png";
+        const filename = this.commercePhoneNumber.replace(/\+/, "phone_") + ".png";
         fs.writeFile(
-            path.join(__dirname, "../","../","./public/", filename),
+            path.join(__dirname, "../", "../", "./public/", filename),
             data,
             "binary",
             (err) => {
@@ -122,7 +110,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
                     this.logger.log({
                         tag: this.TAG,
                         type: "ERROR",
-                        msg: `[${this.phoneNumber}]: ` + err.message,
+                        msg: `[${this.commercePhoneNumber}]: ` + err.message,
                     });
                 }
             }
@@ -142,59 +130,67 @@ export class WhatsAppHandler implements iWhatsappHandler {
         });
     };
 
-    private async asignEvents(client: Whatsapp): Promise<void> {
+    private async asignEvents(client: Whatsapp) {
         this.client = client;
+
         this.client.onIncomingCall(async (call) => {
             this.client.sendText(
                 call.peerJid,
                 "Lo siento, Ahora no puedo recibir llamadas."
             );
         });
+
         this.client.onMessage((message) => {
-            this.client.sendText(message.from, "OK");
-            if (
-                !message.from.includes("status@broadcast") &&
-                !message.fromMe &&
-                message.isGroupMsg === false
-            ) {
-                this.bot.getResponse(
-                    message.from,
-                    message.body,
-                    async (
-                        response = undefined,
-                        buttons = undefined,
-                        list = undefined
-                    ) => {
+            const { from, fromMe, isGroupMsg, body } = message;
+            if (!from.includes("status@broadcast") && !fromMe && !isGroupMsg) {
+                this.bot.getResponse(from, body, 
+                    async (response, buttons, list) => {
                         try {
-                            if (buttons) {
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                await this.client.sendButtons(
-                                    message.from,
-                                    response || "",
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    buttons as any,
-                                    "Por favor para continuar selecciona una de las siguientes opciones\n👇👇👇"
-                                );
-                            } else if (list) {
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                await this.client.sendListMenu(
-                                    message.from,
-                                    response || "",
-                                    "",
-                                    "Ver opciones",
-                                    "Ver opciones",
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    list as any
-                                );
+                            console.log("***-> Whatsapp va a responder: ", response, buttons, list);
+                            if (list?.length || buttons?.length) {
+                                if (list?.length) {
+                                    await this.client.sendListMenu(
+                                        from,
+                                        response.title,
+                                        "",
+                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                        response.subTitle!,
+                                        "Opciones de menu",
+                                        list
+                                    );
+                                    if (buttons?.length) {
+                                        await this.client.sendButtons(
+                                            from,
+                                            "También puedes",
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            buttons as any,
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                            "👇👇👇"
+                                        );
+                                    }
+                                } else {
+                                    await this.client.sendButtons(
+                                        from,
+                                        response.title,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        buttons as any,
+                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                        response.subTitle!
+                                    );
+                                }
                             } else {
-                                await this.client.sendText(message.from, response || "");
+                                await this.client.sendText(from, response.title);
                             }
-                            await this.client.sendText(message.from, response || "");
-                        } catch (error) {
+
+                        } catch ({message = "", text = "", ...error}) {
+                            console.log(error);
                             this.logger.log({
                                 tag: this.TAG,
-                                type: "WARNING",
-                                msg: `Oops! [${this.phoneNumber}]\n${message.from}\n${(error as Error).message}`,
+                                type: "ERROR",
+                                msg: 
+                                    `Oops! [${this.commercePhoneNumber}]\n` + 
+                                    `Customer: ${from}\n` +
+                                    `Error: ${message||text}`,
                             });
                         }
                     }
@@ -207,9 +203,9 @@ export class WhatsAppHandler implements iWhatsappHandler {
                 this.logger.log({
                     tag: this.TAG,
                     type: "WARNING",
-                    msg: `[${this.phoneNumber}] Closing session`,
+                    msg: `[${this.commercePhoneNumber}] Closing session`,
                 });
-                this.client.close().finally( () => process.exit(0) );
+                this.client.close().finally(() => process.exit(0));
             });
         });
     }

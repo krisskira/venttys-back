@@ -1,12 +1,23 @@
 import { Schema, model } from "mongoose";
 import { BotEntity } from "../../bot/domain/bot.entity";
 
-const BotEntitySchema = new Schema<BotEntity>({
+export const BotEntitySchema = new Schema<BotEntity>({
     code: { type: String, index: true, unique: true },
-    collectionName: String,
+    collectionName: { type: String, required: true },
     isSessionVar: Boolean,
-    path: String,
-    default: {type: String, required: false}
+    path: { type: [String], required: true, default: [] },
+    defaultValue: {type: String, required: false},
+    type: {
+        type: String,
+        enum: [
+            "single",
+            "object",
+            "array",
+            "array-object",
+        ],
+        default: "single",
+        required: true
+    }
 });
 
 export default model("BotEntity", BotEntitySchema, "entities");

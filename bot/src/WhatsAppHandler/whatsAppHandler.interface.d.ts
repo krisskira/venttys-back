@@ -3,7 +3,7 @@ import { iBot } from "../interfaces/bot.interface";
 import { iLogger } from "../interfaces/logger.interface";
 
 export interface WhatsAppHandlerContructorArgs {
-    phoneNumber: string,
+    commercePhoneNumber: string,
     logger: iLogger,
     pubSub: iPubSub,
     bot: iBot

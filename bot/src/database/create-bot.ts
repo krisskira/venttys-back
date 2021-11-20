@@ -6,7 +6,6 @@ import { entities } from "./data/entities.data";
 import IntentModel from "./models/intent.model";
 import BotModel from "./models/bot.model";
 import EntityModel from "./models/entity.model";
-import { Schema } from "mongoose";
 
 config();
 
@@ -14,25 +13,25 @@ const logger = new WistonLogger("development");
 
 initMongoDatabase(process.env.DB_CONNECTION_STRING || "", logger)
     .then(async () => {
-        const intentsArray: Schema.Types.ObjectId[] = [];
-
+        const bot = new BotModel({
+            intents: [],
+        });
+        
         for (let i = 0; i < intents.length; i++) {
             const intentModel = new IntentModel(intents[i]);
             await intentModel.save();
-            intentsArray.push(intentModel._id);
+            bot.intents.push(intentModel._id);
         }
+        bot.default = bot.intents[0];
 
         for (let i = 0; i < entities.length; i++) {
             const entityModel = new EntityModel(entities[i]);
             await entityModel.save();
         }
-
-        const bot = new BotModel({
-            intents: intentsArray,
-            default: intentsArray[0]
-        });
+       
         await bot.save();
-
+        console.log("Bot is created.");
+        process.exit(0);
     })
     .catch(console.error);
 

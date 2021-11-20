@@ -1,7 +1,14 @@
 export interface BotEntity {
     code: string,
-    collectionName?: string,
-    path: string,
+    collectionName: string,
+    path: string[],
     isSessionVar: boolean,
-    default?: string 
+    defaultValue?: string,
+    fromMathOperations?: operation[]
+    type: "single" | "object" | "array" | "array-object"
+}
+
+interface operation {
+    vars: string[]
+    operation: "+" | "-" | "*" | "/"
 }
