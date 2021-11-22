@@ -12,14 +12,15 @@ export interface BotListOption {
   }[];
 }
 
-export interface iBot {
-  getResponse(
-    context: string,
+export interface Bot {
+  toAsk(
+    customerPhone: string,
     query: string,
-    responder: (
+    toRespond: (
       messageContent: { title: string; subTitle?: string },
       buttons?: BotButtonOption[],
       list?: BotListOption[]
     ) => void
   ): void;
+  setOnSpeakEvent: (event: (customerPhone: string, messageContent: string, data: unknown) => void) => void;
 }

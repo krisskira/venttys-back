@@ -1,5 +1,5 @@
-export interface BotIntent {
-    tag: string,
+export interface BotIntent  {
+    tag: TagsToEndType | string,
     pattern: string[], // From Self.tag
     variables: string[], // From BotEntity.code
     response: string[],
@@ -15,3 +15,20 @@ export interface BotIntent {
     response_options_type?: "list" | "button" | "single"
     groupBy?: string; // Inner field to group
 }
+
+export type TagsToEndType = | "Completed" | "Close" | "End" | "NeedHuman" | string;
+export enum TagsToEnd {
+    Completed = "Completed",
+    Close = "Close",
+    End = "End",
+    NeedHuman = "NeedHuman",
+}
+
+export const BOT_TAG_WAITING = "waiting";
+export const NOTIFICATION_TAG = "NOTIFICATION_TAG";
+export const BOT_TAGS_TO_END: TagsToEndType[] = [
+    "Completed",
+    "Close",
+    "End",
+    "NeedHuman"
+];

@@ -1,29 +1,84 @@
 /* eslint-disable no-case-declarations */
+import { EventEmitter } from "events";
 import { iLogger } from "../../interfaces/logger.interface";
+import { CommerceRepository as iCommerceRepository } from "../../interfaces/commerce.repository.interface";
 import { firebaseDB } from "../../firebase";
-import { BankAccount, CommerceScheduleDate, iCommerce, Product, Zones } from "../../interfaces/commerce.interface";
+import { BankAccount, CommerceScheduleDate, iCommerce, Order, Product, Zones } from "../../interfaces/commerce.interface";
 import { BotEntity } from "../domain/bot.entity";
 import { formatTime } from "../../utils/formatTime";
 
-export class CommerceRepository {
+export class CommerceRepository implements iCommerceRepository<iCommerce, Order> {
+    public readonly TAG = "CommerceRepository";
     public readonly phoneNumber: string;
     private readonly firebaseCommerceReference: FirebaseFirestore.DocumentReference;
     private readonly logger: iLogger;
+    private readonly emitterCollectionEvent = new EventEmitter();
 
     constructor(phoneNumber: string, logger: iLogger) {
+        this.phoneNumber = phoneNumber;
+        this.logger = logger;
         this.firebaseCommerceReference = firebaseDB
             .collection("commerces")
             .doc(phoneNumber);
-        this.phoneNumber = phoneNumber;
-        this.logger = logger;
         this.firebaseCommerceReference
             .collection("orders")
-            //.doc("+573183919187:1637400444683")
             .onSnapshot((snapshot) => {
-                console.log("Documento Cambio: ", snapshot.docChanges().map( d => d.doc.data()) );//.map(d => d.data()));
+                snapshot.docChanges().map((ordersRef) => {
+                    const value = ordersRef.doc.data() as Order;
+                    if (ordersRef.type === "modified") {
+                        this.emitterCollectionEvent.emit("OrderStatusChange", value.phone, value);
+                        this.logger.log({
+                            type: "DEBUG",
+                            tag: this.TAG,
+                            msg: "Order Updated.\n" +
+                                `Client: ${value.phone}, Estatus: ${value.status}`
+                        });
+                    }
+                    if (ordersRef.type === "added") {
+                        this.logger.log({
+                            type: "DEBUG",
+                            tag: this.TAG,
+                            msg: "New order taked.\n" +
+                                `Client: ${value.phone}, Estatus: ${value.status}`
+                        });
+                    }
+                });
             }, (error) => {
-                console.log("***-> Ups! Error: ", error);
+                this.logger.log({
+                    type: "ERROR",
+                    tag: this.TAG,
+                    msg: "Observer Order Collection.\n" +
+                        error.message
+                });
             });
+    }
+
+    async runAction(customerPhoneNumber: string, order: Order): Promise<void> {
+        await this.firebaseCommerceReference
+            .collection("orders")
+            .doc(await this.getOrdenId(/*customerPhoneNumber*/))
+            .create(order);
+    }
+
+    private async getOrdenId(/*customerId: string*/): Promise<string> {
+        // return `${customerId}:${Date.now()}`;
+        const commerceRef = await this.firebaseCommerceReference
+            .collection("orders").get();
+        const index = commerceRef.size;
+        const date = new Date();
+        const year = date.getFullYear().toString().substring(-2);
+        return `${date.getDate()}${date.getDate()}${year}-${index}`;
+    }
+
+    onEventListen(listener: (customerPhoneNumber: string, order: Order) => void): void {
+        this.emitterCollectionEvent.on("OrderStatusChange", (customerPhoneNumber, order) => {
+            this.logger.log({
+                tag: this.TAG,
+                type: "DEBUG",
+                msg: "***-> Run OrderStatusChange"
+            });
+            listener(customerPhoneNumber, order);
+        });
     }
 
     async getInfo(): Promise<iCommerce> {
@@ -49,8 +104,24 @@ export class CommerceRepository {
     }
 
     async getBankAccounts(): Promise<BankAccount[]> {
-        const commerceRef = await this.firebaseCommerceReference.collection("bank_accounts").get();
+        const commerceRef = await this.firebaseCommerceReference
+            .collection("bank_accounts").get();
         return commerceRef.docs.map(p => <BankAccount>p.data());
+    }
+
+    async getOrders(customerPhoneNumber: string): Promise<Order[]> {
+        const commerceRef = await this.firebaseCommerceReference
+            .collection("orders")
+            .where("phone", "==", customerPhoneNumber)
+            .get();
+        return commerceRef.docs.map(p => <Order>p.data()).sort((a, b) => {
+            if (new Date(a.created_at) > new Date(b.created_at)) {
+                return 1;
+            } else if (new Date(a.created_at) < new Date(b.created_at)) {
+                return -1;
+            }
+            return 0;
+        });
     }
 
     async getSchedules(): Promise<CommerceScheduleDate[]> {
@@ -77,7 +148,8 @@ export class CommerceRepository {
         return [...methods];
     }
 
-    async getResolveEntity<T>(entity: BotEntity): Promise<T | T[]> {
+
+    async getResolveEntity<T>(entity: BotEntity, customerPhoneNumber: string): Promise<T | T[]> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let collectionData: any[] = [];
 
@@ -97,8 +169,21 @@ export class CommerceRepository {
             case "payment_methods":
                 collectionData = await this.getPaymentMethods();
                 break;
+            case "orders":
+                collectionData = await this.getOrders(customerPhoneNumber);
+                break;
             case "commerces":
                 collectionData = [await this.getInfo()];
+                break;
+            case "fix":
+                collectionData = [
+                    {
+                        "waiting": "Espera",
+                        "cooking": "preparación",
+                        "finish": "Enviado",
+                        "canceled": "Cancelado"
+                    }
+                ];
                 break;
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -139,7 +224,7 @@ export class CommerceRepository {
 
         this.logger.log({
             type: "DEBUG",
-            tag: "CommerceRepository",
+            tag: this.TAG,
             msg: "Commerce data to variable" +
                 `\nEntity: ${entity.code}` +
                 `\nType: ${entity.type}` +

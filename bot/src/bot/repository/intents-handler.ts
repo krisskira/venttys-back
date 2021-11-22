@@ -1,54 +1,32 @@
 import BotModel from "../../database/models/bot.model";
 import EntityModel from "../../database/models/entity.model";
 import UserSessionModel from "../../database/models/bot-session.model";
-import { iCommerce } from "../../interfaces/commerce.interface";
 import { iLogger } from "../../interfaces/logger.interface";
-import { BotIntent } from "../domain/bot-intent.entity";
-import { CommerceRepository } from "./commerce.repository";
+import { BotIntent, BOT_TAG_WAITING, NOTIFICATION_TAG } from "../domain/bot-intent.entity";
+import { CommerceRepository, CommerceSourceEntity } from "../../interfaces/commerce.repository.interface";
 import { BotEntity } from "../domain/bot.entity";
-import { BotSessionVar } from "../domain/bot.session.entity";
+import { BotSession, BotSessionVar } from "../domain/bot.session.entity";
+import { Order } from "src/interfaces/commerce.interface";
 
-
-interface ReplaceVarsArgs {
-    intent: BotIntent,
-    commerceInfo: iCommerce,
-    sessionVars: BotSessionVar[],
-    extraVars?: string[]
-}
-
-interface BotQueryArgs {
-    pattern: string,
-    customerPhoneNumber: string
-}
-
-export interface IntentsHandlerRepository {
-    botQueryByTag(args: BotQueryArgs): Promise<BotIntent>;
-}
-
-export class IntentsHandler implements IntentsHandlerRepository {
+export class IntentsHandler<TData> implements IntentsHandlerRepository {
 
     private readonly TAG = "IntentsHandler";
-    private readonly commerce: CommerceRepository;
+    private readonly commerce: CommerceRepository<CommerceSourceEntity, TData>;
+    private commerceInfo!: CommerceSourceEntity;
     private readonly logger: iLogger;
-    private commerceInfo!: iCommerce;
     private intents: BotIntent[] = [];
     private entities: BotEntity[] = [];
 
-    constructor(commerce: CommerceRepository, logger: iLogger) {
+    constructor(commerce: CommerceRepository<CommerceSourceEntity, TData>, logger: iLogger) {
         this.logger = logger;
         this.commerce = commerce;
-        this.commerce.getInfo()
-            .then((commerceInfo) => {
-                this.setupCommerceInfo(commerceInfo)
-                    .catch(error => { throw error; });
-            })
-            .catch(error => { throw error; });
+        this.setupComerce();
     }
 
-    async setupCommerceInfo(commerceInfo: iCommerce): Promise<void> {
-        this.commerceInfo = commerceInfo;
-        const botCode = this.commerceInfo?.botCode || "default";
+    private async setupComerce(): Promise<void> {
+        this.commerceInfo = await this.commerce.getInfo();
         this.entities = await EntityModel.find();
+        const { botCode = "default" } = this.commerceInfo;
         const bot = await BotModel.findOne({ code: botCode }).populate<BotIntent>("intents");
         if (!bot) {
             const errorMessage = "BotCode not found";
@@ -63,16 +41,21 @@ export class IntentsHandler implements IntentsHandlerRepository {
     }
 
     async botQueryByTag(args: BotQueryArgs): Promise<BotIntent> {
-        const maxSessionTime = 30;
+        await this.setupComerce();
         let intentPattern = args.pattern.toLowerCase();
 
         /** GET CUSTOMER SESSION */
-
-        let userSession = await UserSessionModel
-            .findOne({ phone: args.customerPhoneNumber, is_active: true })
+        const isNotification = args.pattern === NOTIFICATION_TAG;
+        const maxSessionTime = 30;
+        const sessionActive = isNotification ? {} : { is_active: true };
+        let [userSession] = await UserSessionModel
+            .find({ phone: args.customerPhoneNumber, ...sessionActive })
+            .sort({ updatedAt: -1 })
+            .limit(1)
             .populate("currentIntent");
 
         if (!userSession) {
+
             userSession = await new UserSessionModel({
                 phone: args.customerPhoneNumber,
                 currentIntent: this.intents[0],
@@ -86,6 +69,7 @@ export class IntentsHandler implements IntentsHandlerRepository {
                 type: "DEBUG",
                 msg: "Create session..."
             });
+
         } else {
             const elapseSessionTime = (Date.now() - (userSession.updatedAt?.getTime() || Date.now())) / 60000;
             const sessionHasEnded = [
@@ -96,12 +80,12 @@ export class IntentsHandler implements IntentsHandlerRepository {
             ].includes((userSession.currentIntent as BotIntent).tag);
 
             // Update the session time live.
-            if (elapseSessionTime < maxSessionTime && !sessionHasEnded) {
+            if ((elapseSessionTime < maxSessionTime && !sessionHasEnded) || isNotification) {
                 userSession.updatedAt = new Date();
                 this.logger.log({
                     tag: this.TAG,
                     type: "DEBUG",
-                    msg: "Refesh session..."
+                    msg: `Updating session, is a notification: ${isNotification}.`
                 });
             }
             // As the session has expired then is created a new session.
@@ -143,12 +127,16 @@ export class IntentsHandler implements IntentsHandlerRepository {
         else {
             const tags = (userSession.currentIntent as BotIntent).next_tags;
 
-            if (tags[0] === "waiting") {
+            if (tags[0] === BOT_TAG_WAITING) {
                 const sessionVarsName = (userSession.currentIntent as BotIntent).session_var_to_save || "";
                 // Save the multiple sessions vars
+                console.log("***-> Session vars: ", userSession.vars);
                 sessionVarsName.split("|").forEach(sessionVarName => {
-                    const varIndex = userSession?.vars.findIndex(({ key }) => key === sessionVarName) || -1;
+                    const varIndex = userSession.vars.findIndex(({ key = "" }) => key === sessionVarName) || -1;
                     const entity = this.entities.find(({ code }) => code === sessionVarName);
+
+                    console.log(`***-> Indice de la varable ${sessionVarName}: `, varIndex);
+                    console.log("***-> Entidad: ", entity);
 
                     // If session var right now exist then update its value
                     if (varIndex >= 0) {
@@ -195,7 +183,7 @@ export class IntentsHandler implements IntentsHandlerRepository {
                         switch (entity?.type) {
                             case "array":
                                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                userSession!.vars.push({
+                                userSession.vars.push({
                                     key: sessionVarName,
                                     type: entity?.type,
                                     content: JSON.stringify([args.pattern])
@@ -203,7 +191,7 @@ export class IntentsHandler implements IntentsHandlerRepository {
                                 break;
                             case "single":
                                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                userSession!.vars.push({
+                                userSession.vars.push({
                                     key: sessionVarName,
                                     type: entity?.type,
                                     content: args.pattern
@@ -239,14 +227,21 @@ export class IntentsHandler implements IntentsHandlerRepository {
         // Replace all simple variables in respose messages.
         dialogResponse.response = await this.replaceVariables({
             intent: dialogResponse,
-            sessionVars: userSession.vars,
             commerceInfo: this.commerceInfo,
+            customerPhoneNumber: args.customerPhoneNumber,
+            sessionVars: userSession?.vars || [],
             extraVars: dialogResponse.response_options_from_commerce
                 ? [dialogResponse.response_options_from_commerce.response_code]
                 : []
         });
 
         await userSession.save();
+        if (dialogResponse.tag === "Completed") {
+            this.commerce.runAction(args.customerPhoneNumber, userSession.toObject())
+                .then(r => {
+                    console.log("***-> Completado", r);
+                }).catch(error => console.log("Oops! ", error));
+        }
         return dialogResponse;
     }
 
@@ -276,14 +271,17 @@ export class IntentsHandler implements IntentsHandlerRepository {
                     .find(_var => _var.key === entity.code) || {};
                 // TODO: Calculate math operation entity.fromMathOperations.
                 varContent[variable] = content || entity.defaultValue || "********";
-                console.log("Variables de session: ",args.sessionVars);
-                console.log("Entidad: ",entity);
+                console.log("Variables de session: ", args.sessionVars);
+                console.log("Entidad: ", entity);
                 console.log("Content Session: ", otherContent);
             } else {
                 // Models: single | object | array | array-object
                 // Variables => string[] | Record<string, string|number>[]
                 // Buttons or List => string[][] | Record<string,string|number>[][]
-                varContent[variable] = await this.commerce.getResolveEntity(entity);
+                varContent[variable] =
+                    await this.commerce.getResolveEntity(entity, args.customerPhoneNumber) ||
+                    entity.defaultValue
+                    || "********";
             }
         }
 
@@ -300,6 +298,9 @@ export class IntentsHandler implements IntentsHandlerRepository {
                 } else {
                     _response = _response.replace(regex, value);
                 }
+                // Is used only for Notification_TAG
+                const simpleRegex = new RegExp(`${variable}`, "g");
+                _response = _response.replace(simpleRegex, value as string);
             }
             responses.push(_response);
         }
@@ -317,5 +318,22 @@ export class IntentsHandler implements IntentsHandlerRepository {
         }
         return responses;
     }
+}
+
+interface ReplaceVarsArgs {
+    intent: BotIntent,
+    commerceInfo: CommerceSourceEntity,
+    customerPhoneNumber: string,
+    sessionVars: BotSessionVar[],
+    extraVars?: string[]
+}
+
+interface BotQueryArgs {
+    pattern: string,
+    customerPhoneNumber: string
+}
+
+export interface IntentsHandlerRepository {
+    botQueryByTag(args: BotQueryArgs): Promise<BotIntent>;
 }
 

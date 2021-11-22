@@ -1,3 +1,5 @@
+import { CommerceSourceEntity } from "./commerce.repository.interface";
+
 export type Day =
   | "monday"
   | "tuesday"
@@ -91,7 +93,7 @@ export interface BankAccount {
   number: string;
 }
 
-export interface iCommerce {
+export interface iCommerce extends CommerceSourceEntity {
   commerceId: string;
   name: string;
   phone: string;
@@ -117,6 +119,4 @@ export interface iCommerce {
     sunday: CommerceScheduleDate;
     holiday: CommerceScheduleDate;
   };
-  botCode?: string;
-  assistance_name?: string;
 }

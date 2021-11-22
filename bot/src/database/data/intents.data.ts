@@ -104,6 +104,7 @@ export const intents: BotIntent[] = [
         response_options_from_commerce: {
             response_code: "commerce_products",
             response_options_type: "list",
+            groupBy: "category|name",
             response: []
         },
         response_options_type: "button",
@@ -171,6 +172,7 @@ export const intents: BotIntent[] = [
             response_options_type: "button",
             response: []
         },
+        response_options_type: "button",
         response_options: [],
         session_var_to_save: "session_var_payment_method_selected",
         next_tags: ["waiting", "Completed"],
@@ -213,6 +215,24 @@ export const intents: BotIntent[] = [
         variables: [],
         response: [
             "Uno de nuestros representantes se pondrá en contacto con usted en breve."
+        ],
+        response_options: [],
+        next_tags: [],
+    },
+    {
+        tag: "NOTIFICATION_TAG",
+        pattern: ["NOTIFICATION_TAG"],
+        variables: [
+            "order_var_client_name", 
+            "order_var_status", 
+            "order_var_cancel_reason",
+            "waiting",
+            "cooking",
+            "finish",
+            "canceled"
+        ],
+        response: [
+            "##order_var_client_name## su pedido ha cambio a estado: ##order_var_status##.\n##order_var_cancel_reason##"
         ],
         response_options: [],
         next_tags: [],

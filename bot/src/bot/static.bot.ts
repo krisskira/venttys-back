@@ -1,21 +1,44 @@
-import { iLogger } from "src/interfaces/logger.interface";
-import { iBot, BotButtonOption as BotOptionButton, BotListOption as BotOptionList } from "../interfaces/bot.interface";
-import { CommerceRepository } from "./repository/commerce.repository";
+import { EventEmitter } from "events";
+import { iLogger } from "../interfaces/logger.interface";
+import { Bot, BotButtonOption as BotOptionButton, BotListOption as BotOptionList } from "../interfaces/bot.interface";
 import { IntentsHandlerRepository } from "./repository/intents-handler";
+import { CommerceRepository } from "../interfaces/commerce.repository.interface";
 
-export class StaticBot implements iBot {
+import { NOTIFICATION_TAG } from "./domain/bot-intent.entity";
 
+export class StaticBot<TCommerce, TData> implements Bot {
+
+    private readonly TAG = "Static Bot";
     private readonly intentResolver: IntentsHandlerRepository;
     private readonly commercePhoneNumber: string;
     private readonly logger: iLogger;
+    private readonly emiterOnSpeak = new EventEmitter();
+    private readonly commerceRepository: CommerceRepository<TCommerce, TData>;
 
-    constructor(commerceRepository: CommerceRepository, intentHandler: IntentsHandlerRepository, logger: iLogger) {
+    constructor(commerceRepository: CommerceRepository<TCommerce, TData>, intentHandler: IntentsHandlerRepository, logger: iLogger) {
         this.commercePhoneNumber = commerceRepository.phoneNumber;
         this.logger = logger;
         this.intentResolver = intentHandler;
+        this.commerceRepository = commerceRepository;
+        this.commerceRepository.onEventListen(async (customerPhoneNumber, data) => {
+            this.logger.log({
+                tag: this.TAG,
+                type: "DEBUG",
+                msg: "***-> Run OnEventListen"
+            });
+            const intent = await this.intentResolver.botQueryByTag({
+                customerPhoneNumber,
+                pattern: NOTIFICATION_TAG
+            });
+            const message = intent.response.join("\n");
+            this.emiterOnSpeak.emit("Speak", customerPhoneNumber, message, data);
+        });
+    }
+    setOnSpeakEvent(event: (customerPhone: string, messageContent: string, data: TData) => void): void {
+        this.emiterOnSpeak.addListener("Speak", event);
     }
 
-    async getResponse(
+    async toAsk(
         customerPhoneNumber: string,
         textCustomerQuery: string,
         responder: (
@@ -155,18 +178,4 @@ export class StaticBot implements iBot {
         }, listButtons, listOptions);
     }
 
-    // private sendMessage?: (to: string, message: string) => void;
-
-    // setMessageSender(sendMessage: (to: string, message: string) => void): void {
-    //     this.sendMessage = sendMessage;
-    // }
-
-    // private notifyChageOrderStatus(order: iOrder) {
-    //     console.log("***-> Cambio de estado en una orden: ", order);
-    //     if (this.sendMessage) {
-    //         this.sendMessage("573183919187", "Cambios de estado en pedido");
-    //     } else {
-    //         throw "bad_implementation";
-    //     }
-    // }
 }

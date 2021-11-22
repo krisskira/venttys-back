@@ -4,7 +4,7 @@ import path from "path";
 import { iLogger } from "../interfaces/logger.interface";
 import { Events, iPubSub } from "../interfaces/pubSub.interface";
 import { WhatsAppHandlerContructorArgs } from "./whatsAppHandler.interface";
-import { iBot } from "../interfaces/bot.interface";
+import { Bot } from "../interfaces/bot.interface";
 import { iWhatsappHandler } from "../interfaces/whatsappHandler.interface";
 
 /**
@@ -16,7 +16,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
     private readonly TAG = "WhatsAppHandler";
 
     client!: Whatsapp;
-    bot: iBot;
+    bot: Bot;
     logger: iLogger;
     pubSub: iPubSub;
     commercePhoneNumber: string;
@@ -132,6 +132,22 @@ export class WhatsAppHandler implements iWhatsappHandler {
 
     private async asignEvents(client: Whatsapp) {
         this.client = client;
+        this.bot.setOnSpeakEvent((customerPhone: string, messageContent: string, data: unknown) => {
+            this.logger.log({
+                tag: this.TAG,
+                type: "DEBUG",
+                msg: `Bot said: ${messageContent}.\nTo: ${customerPhone}\n` +
+                    `Additional data: ${JSON.stringify(data)}`
+            });
+            client.sendText(customerPhone, messageContent)
+                .catch(error => {
+                    this.logger.log({
+                        tag: this.TAG,
+                        type: "ERROR",
+                        msg: "Oops!\n" + JSON.stringify(error)
+                    });
+                });
+        });
 
         this.client.onIncomingCall(async (call) => {
             this.client.sendText(
@@ -143,10 +159,9 @@ export class WhatsAppHandler implements iWhatsappHandler {
         this.client.onMessage((message) => {
             const { from, fromMe, isGroupMsg, body } = message;
             if (!from.includes("status@broadcast") && !fromMe && !isGroupMsg) {
-                this.bot.getResponse(from, body, 
+                this.bot.toAsk(from, body,
                     async (response, buttons, list) => {
                         try {
-                            console.log("***-> Whatsapp va a responder: ", response, buttons, list);
                             if (list?.length || buttons?.length) {
                                 if (list?.length) {
                                     await this.client.sendListMenu(
@@ -182,15 +197,15 @@ export class WhatsAppHandler implements iWhatsappHandler {
                                 await this.client.sendText(from, response.title);
                             }
 
-                        } catch ({message = "", text = "", ...error}) {
+                        } catch ({ message = "", text = "", ...error }) {
                             console.log(error);
                             this.logger.log({
                                 tag: this.TAG,
                                 type: "ERROR",
-                                msg: 
-                                    `Oops! [${this.commercePhoneNumber}]\n` + 
+                                msg:
+                                    `Oops! [${this.commercePhoneNumber}]\n` +
                                     `Customer: ${from}\n` +
-                                    `Error: ${message||text}`,
+                                    `Error: ${message || text}`,
                             });
                         }
                     }
@@ -203,7 +218,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
                 this.logger.log({
                     tag: this.TAG,
                     type: "WARNING",
-                    msg: `[${this.commercePhoneNumber}] Closing session`,
+                    msg: `[${this.commercePhoneNumber}]Closing session`,
                 });
                 this.client.close().finally(() => process.exit(0));
             });
