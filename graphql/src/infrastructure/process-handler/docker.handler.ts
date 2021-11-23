@@ -50,7 +50,7 @@ export class DockerProcessHandler implements iProcessHandler {
   };
 
   run = async (process: iProcessArgs): Promise<string[]> => {
-    const imageName = "nginx"; // "whatsapp-handler";
+    const imageName = "whatsapp-handler";
     const { commerceName = "", commerceNumber = "" } = process.envVars;
     const db = this._databaseUri
       ? ["-e", `MONGODB_URL="${this._databaseUri}"`]
