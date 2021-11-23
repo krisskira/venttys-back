@@ -2,6 +2,7 @@ FROM node:14 AS builder
 WORKDIR /home/build
 COPY src ./src
 COPY package.json ./
+COPY package-lock.json ./
 COPY tsconfig.json ./
 RUN npm install
 RUN npm run build
@@ -23,7 +24,7 @@ RUN apt-get update && \
 
 COPY --from=builder /home/build/build /home/app/build
 COPY --from=builder /home/build/package.json /home/app
-RUN npm install --production
+RUN npm install
 
 ENV PHONE=''
 ENV COMMERCE=''
