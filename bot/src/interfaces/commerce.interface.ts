@@ -93,7 +93,7 @@ export interface BankAccount {
   number: string;
 }
 
-export interface iCommerce extends CommerceSourceEntity {
+export interface Commerce extends CommerceSourceEntity {
   commerceId: string;
   name: string;
   phone: string;

@@ -42,26 +42,26 @@ export const entities: BotEntity[] = [
         isSessionVar: false,
         path: ["name","number"],
         collectionName: "bank_accounts",
-        type: "array"
+        type: "single"
     },
     {
         code: "commerce_delivery_zones",
         isSessionVar: false,
         path: ["name","price"],
         collectionName: "zones",
-        type: "array"
+        type: "single"
     },
     {
         code: "commerce_payment_methods",
         isSessionVar: false,
-        path: ["payment_methods|name"],
-        collectionName: "commerces",
+        path: ["name"],
+        collectionName: "payment_methods",
         type: "array"
     },
     {
         code: "session_var_products_selected",
         isSessionVar: true,
-        path: [],
+        path: ["name", "normal_price"],
         collectionName: "products",
         type: "array"
     },
@@ -91,7 +91,7 @@ export const entities: BotEntity[] = [
         isSessionVar: true,
         path: [],
         collectionName: "session",
-        type: "array"
+        type: "single"
     },
     {
         code: "session_var_client_delivery_zones",
@@ -130,7 +130,7 @@ export const entities: BotEntity[] = [
         type: "array",
         fromMathOperations:[{
             operation: "+",
-            vars:["session_var_products_selected", "session_var_quantity_product_selected"]
+            vars:["session_var_products_selected|name", "session_var_quantity_product_selected"]
         }]
     },
     {
@@ -142,7 +142,7 @@ export const entities: BotEntity[] = [
         fromMathOperations:[
             {
                 operation: "*",
-                vars:["session_var_quantity_product_selected", "session_var_price_products_selected"]
+                vars:["session_var_quantity_product_selected", "session_var_products_selected|normal_price"]
             }
         ]
     },
@@ -150,32 +150,32 @@ export const entities: BotEntity[] = [
         code: "waiting",
         isSessionVar: false,
         path: ["waiting"],
-        collectionName: "fix",
+        collectionName: "fixed-message",
         type: "single",
-        defaultValue: "En espera"
+        defaultValue: "*En espera*"
     },
     {
         code: "cooking",
         isSessionVar: false,
         path: ["cooking"],
-        collectionName: "fix",
+        collectionName: "fixed-message",
         type: "single",
-        defaultValue: "En preparación"
+        defaultValue: "*En preparación*"
     },
     {
         code: "finish",
         isSessionVar: false,
         path: ["finish"],
-        collectionName: "fix",
+        collectionName: "fixed-message",
         type: "single",
-        defaultValue: "Enviado"
+        defaultValue: "*Enviado*"
     },
     {
         code: "canceled",
         isSessionVar: false,
         path: ["canceled"],
-        collectionName: "fix",
+        collectionName: "fixed-message",
         type: "single",
-        defaultValue: "Cancelado"
+        defaultValue: "*Cancelado*"
     },
 ];

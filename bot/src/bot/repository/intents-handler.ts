@@ -2,22 +2,21 @@ import BotModel from "../../database/models/bot.model";
 import EntityModel from "../../database/models/entity.model";
 import UserSessionModel from "../../database/models/bot-session.model";
 import { iLogger } from "../../interfaces/logger.interface";
-import { BotIntent, BOT_TAG_WAITING, NOTIFICATION_TAG } from "../domain/bot-intent.entity";
-import { CommerceRepository, CommerceSourceEntity } from "../../interfaces/commerce.repository.interface";
+import { BotIntent, BOT_TAGS_TO_END, BOT_TAG_COMPLETED, BOT_TAG_DEFAULT, BOT_TAG_WAITING, NOTIFICATION_TAG } from "../domain/bot-intent.entity";
+import { ProductOwnerRepository, CommerceSourceEntity } from "../../interfaces/commerce.repository.interface";
 import { BotEntity } from "../domain/bot.entity";
-import { BotSession, BotSessionVar } from "../domain/bot.session.entity";
-import { Order } from "src/interfaces/commerce.interface";
+import { BotSessionVar } from "../domain/bot.session.entity";
 
 export class IntentsHandler<TData> implements IntentsHandlerRepository {
 
     private readonly TAG = "IntentsHandler";
-    private readonly commerce: CommerceRepository<CommerceSourceEntity, TData>;
+    private readonly commerce: ProductOwnerRepository<CommerceSourceEntity, TData>;
     private commerceInfo!: CommerceSourceEntity;
     private readonly logger: iLogger;
     private intents: BotIntent[] = [];
     private entities: BotEntity[] = [];
 
-    constructor(commerce: CommerceRepository<CommerceSourceEntity, TData>, logger: iLogger) {
+    constructor(commerce: ProductOwnerRepository<CommerceSourceEntity, TData>, logger: iLogger) {
         this.logger = logger;
         this.commerce = commerce;
         this.setupComerce();
@@ -26,7 +25,7 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
     private async setupComerce(): Promise<void> {
         this.commerceInfo = await this.commerce.getInfo();
         this.entities = await EntityModel.find();
-        const { botCode = "default" } = this.commerceInfo;
+        const { botCode = BOT_TAG_DEFAULT } = this.commerceInfo;
         const bot = await BotModel.findOne({ code: botCode }).populate<BotIntent>("intents");
         if (!bot) {
             const errorMessage = "BotCode not found";
@@ -72,12 +71,7 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
 
         } else {
             const elapseSessionTime = (Date.now() - (userSession.updatedAt?.getTime() || Date.now())) / 60000;
-            const sessionHasEnded = [
-                "Completed",
-                "Close",
-                "End",
-                "NeedHuman"
-            ].includes((userSession.currentIntent as BotIntent).tag);
+            const sessionHasEnded = BOT_TAGS_TO_END.includes((userSession.currentIntent as BotIntent).tag);
 
             // Update the session time live.
             if ((elapseSessionTime < maxSessionTime && !sessionHasEnded) || isNotification) {
@@ -125,90 +119,108 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
         // save the user response in session vars else responde with 
         // Default intent content.
         else {
+            /**
+             * SESSION VARS - START PROCESS TO SAVE.
+             */
             const tags = (userSession.currentIntent as BotIntent).next_tags;
 
             if (tags[0] === BOT_TAG_WAITING) {
-                const sessionVarsName = (userSession.currentIntent as BotIntent).session_var_to_save || "";
+                const sessionVarName = (userSession.currentIntent as BotIntent).session_var_to_save || "";
                 // Save the multiple sessions vars
                 console.log("***-> Session vars: ", userSession.vars);
-                sessionVarsName.split("|").forEach(sessionVarName => {
-                    const varIndex = userSession.vars.findIndex(({ key = "" }) => key === sessionVarName) || -1;
-                    const entity = this.entities.find(({ code }) => code === sessionVarName);
-
-                    console.log(`***-> Indice de la varable ${sessionVarName}: `, varIndex);
-                    console.log("***-> Entidad: ", entity);
-
-                    // If session var right now exist then update its value
-                    if (varIndex >= 0) {
-                        let currentContent = userSession?.vars[varIndex].content;
-
-                        this.logger.log({
-                            tag: this.TAG,
-                            type: "DEBUG",
-                            msg: `Update session var '${sessionVarName}' ` +
-                                `type: ${args.pattern}\n` +
-                                `with value: ${args.pattern}\n` +
-                                `Current content: ${currentContent}`
-                        });
-
-                        // IMPORTANT:
-                        // The content to session-vars entry from user must
-                        // only be a string[] | string.
-                        switch (entity?.type) {
-                            case "array":
-                                // Recover original form of variable.
-                                currentContent = currentContent
-                                    ? JSON.parse(currentContent)
-                                    : [];
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                userSession!.vars[varIndex].content = JSON.stringify([
-                                    ...(currentContent as unknown as Array<string | number>),
-                                    args.pattern
-                                ]);
-                                break;
-                            case "single":
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                userSession!.vars[varIndex].content = args.pattern;
-                                break;
-                        }
+                const varIndex = userSession.vars.findIndex(({ key = "" }) => `${key}` === `${sessionVarName}`);
+                const entity = this.entities.find(({ code }) => code === sessionVarName);
+                // The entity the value type can look {path[0]:value, path[1]:value,...}
+                // Or also can look "value" (string),
+                // All that depend if has path.
+                let contentVar: string | Record<string, string> = "";
+                if (entity) {
+                    const { path = [] } = entity;
+                    const varsContent = args.pattern.split("\n");
+                    if (path.length) {
+                        // If entity has path the build the object to save the content
+                        contentVar = path.reduce((obj, key, index) => ({
+                            ...obj,
+                            [key]: varsContent[index]
+                        }), {} as Record<string, string>);
+                    } else {
+                        // If entity hasn't path then save raw content
+                        contentVar = args.pattern;
                     }
-                    // Save the new session var and its value.
-                    else {
-                        this.logger.log({
-                            tag: this.TAG,
-                            type: "DEBUG",
-                            msg: `Save new session var '${sessionVarName}' ` +
-                                `with value: ${args.pattern}\n`
-                        });
-                        switch (entity?.type) {
-                            case "array":
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                userSession.vars.push({
-                                    key: sessionVarName,
-                                    type: entity?.type,
-                                    content: JSON.stringify([args.pattern])
-                                });
-                                break;
-                            case "single":
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                userSession.vars.push({
-                                    key: sessionVarName,
-                                    type: entity?.type,
-                                    content: args.pattern
-                                });
-                        }
+                }
+
+                // If session var right now exist then update its value
+                if (varIndex >= 0) {
+                    // IMPORTANT:
+                    // The content to session-vars entry from user must only be a 
+                    // entity?.type == array then content is Record<string,string>[] | string[]
+                    // entity?.type == single then content is Record<string,string> | string.
+                    let currentContent = userSession?.vars[varIndex].content;
+
+                    this.logger.log({
+                        tag: this.TAG,
+                        type: "DEBUG",
+                        msg: `Update session var '${sessionVarName}' ` +
+                            `type: ${contentVar}\n` +
+                            `with value: ${contentVar}\n` +
+                            `Current content: ${currentContent}`
+                    });
+
+                    switch (entity?.type) {
+                        case "array":
+                            // Recover original form variable.
+                            currentContent = currentContent
+                                ? JSON.parse(currentContent)
+                                : [];
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            userSession!.vars[varIndex].content = JSON.stringify([
+                                ...currentContent,
+                                contentVar
+                            ]);
+                            break;
+                        case "single":
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            userSession!.vars[varIndex].content = contentVar;
+                            break;
                     }
-                });
+                }
+                // Save the new session var and its value.
+                else {
+                    this.logger.log({
+                        tag: this.TAG,
+                        type: "DEBUG",
+                        msg: `Save new session var '${sessionVarName}' ` +
+                            `with value: ${contentVar}\n`
+                    });
+                    switch (entity?.type) {
+                        case "array":
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            userSession.vars.push({
+                                key: sessionVarName,
+                                type: entity?.type,
+                                content: JSON.stringify([contentVar])
+                            });
+                            break;
+                        case "single":
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            userSession.vars.push({
+                                key: sessionVarName,
+                                type: entity?.type,
+                                content: contentVar
+                            });
+                    }
+                }
+
                 // Navigate to next_tag[1] in case the intent is bad setting 
                 // then navigate to default intent.
                 [dialogResponse] = this.intents
-                    .filter((intent) => intent.tag === (tags[1] || "Default"));
+                    .filter((intent) => intent.tag === (tags[1] || BOT_TAG_DEFAULT));
             }
             // Si el patron de la intencion actual no esta en modo de espera
             // entonces retorna el mensaje predeterminado
             else {
                 [dialogResponse] = this.intents
-                    .filter((intent) => intent.tag === "Default");
+                    .filter((intent) => intent.tag === BOT_TAG_DEFAULT);
             }
             // asigna a la session la nueva posicion actual de la conversacion.
             userSession.currentIntent = dialogResponse;
@@ -236,11 +248,13 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
         });
 
         await userSession.save();
-        if (dialogResponse.tag === "Completed") {
+        if (dialogResponse.tag === BOT_TAG_COMPLETED) {
             this.commerce.runAction(args.customerPhoneNumber, userSession.toObject())
-                .then(r => {
-                    console.log("***-> Completado", r);
-                }).catch(error => console.log("Oops! ", error));
+                .catch(error => this.logger.log({
+                    tag: this.TAG,
+                    type: "ERROR",
+                    msg: JSON.stringify(error)
+                }));
         }
         return dialogResponse;
     }
@@ -265,15 +279,43 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
             }
 
             if (entity.isSessionVar) {
+                // IMPORTANT:
+                // The content to session-vars entry from user must only be a 
+                // entity?.type == array then content is Record<string,string>[] | string[]
+                // entity?.type == single then content is Record<string,string> | string.
+
+                // The entity the value type can look {path[0]:value, path[1]:value,...}
+                // Or also can look "value" (string),
+                // All that depend if has path.
+
                 // Models: single | array
                 // Variables => string | string[]
-                const { content, ...otherContent } = args.sessionVars
-                    .find(_var => _var.key === entity.code) || {};
-                // TODO: Calculate math operation entity.fromMathOperations.
-                varContent[variable] = content || entity.defaultValue || "********";
-                console.log("Variables de session: ", args.sessionVars);
-                console.log("Entidad: ", entity);
-                console.log("Content Session: ", otherContent);
+                const { content = "", type = "single" } = args.sessionVars
+                    .find(({ key }) => key === entity.code) || {};
+
+                if (entity.collectionName !== "computed") {
+                    let rawContent: string | string[] | Record<string, unknown> | Record<string, unknown>[];
+                    if (type === "single") {
+                        if (entity.path.length > 0) {
+                            // Object string
+                            console.log("Computed var: ", content, "\nentity:", entity);
+                            rawContent = JSON.parse(content || entity.defaultValue || "{}");
+                        } else {
+                            // Single string
+                            rawContent = content || entity.defaultValue || "*Undefined*";
+                        }
+                    } else {
+                        if (entity.path.length > 0) {
+                            // Array String
+                            rawContent = JSON.parse(content || entity.defaultValue || "[]");
+                        } else {
+                            // Array Object
+                            rawContent = JSON.parse(content || entity.defaultValue || "[]");
+                        }
+                    }
+                    varContent[variable] = rawContent;
+                }
+                console.log("***-> Content Session: ", varContent);
             } else {
                 // Models: single | object | array | array-object
                 // Variables => string[] | Record<string, string|number>[]
@@ -281,7 +323,60 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
                 varContent[variable] =
                     await this.commerce.getResolveEntity(entity, args.customerPhoneNumber) ||
                     entity.defaultValue
-                    || "********";
+                    || "*Undefined*";
+            }
+        }
+
+        /** COMPUTED VARS */
+        for (const variable of [...variables, ...extraVars]) {
+            const entity = this.entities.find(({ code }) => code === variable);
+            if (!entity) {
+                const errorMessage = "" +
+                    `The entities has bad configured to commerce: '${this.commerceInfo.phone}'\n` +
+                    `Entity: ${variable} not found.`;
+                this.logger.log({ tag: this.TAG, type: "ERROR", msg: errorMessage });
+                throw errorMessage;
+            }
+
+            if (entity.isSessionVar) {
+                if (entity.collectionName === "computed") {
+                    varContent[variable] = "*PENDING*";
+                    // console.log("Initial Vars: ", entity.fromMathOperations);
+                    // console.log("Map Session Vars: ", varContent);
+                    // const initialResults = entity.fromMathOperations?.map(OpMath => {
+                    //     const vars = OpMath.vars.map(keys => {
+                    //         const content = keys.split("|").reduce((acc, key, index, array) => {
+                    //             const rawVal = index === 0
+                    //                 ? varContent[key]
+                    //                 : acc[key];
+                    //             console.log(`***-> Get var (${index}): `, keys, key, `\nContent (${key}): `, rawVal);
+                    //             const asNumber = parseFloat(rawVal);
+                    //             if (index === (array.length - 1)) {
+                    //                 if (asNumber) { return asNumber; }
+                    //                 return rawVal + " ";
+                    //             }
+                    //             return rawVal;
+                    //         }, "" as any);
+                    //         return content;
+                    //     });
+                    //     console.log("**->Variables: ", vars);
+                    //     let result = "*Undefined?*";
+                    //     const opeMathString = "result = " + vars.join(OpMath.operation);
+                    //     console.log("***-> Math: ", opeMathString);
+                    //     try {
+                    //         eval(opeMathString);
+                    //     } catch (error) {
+                    //         result = (error as Error).message;
+                    //     }
+                    //     return result;
+                    // });
+                    // console.log("***-> Computed vars: ", initialResults);
+                    // if (entity.type === "array") {
+                    //     varContent[variable] = initialResults;
+                    // } else {
+                    //     varContent[variable] = initialResults?.join("\n");
+                    // }
+                }
             }
         }
 
@@ -294,7 +389,7 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
                 const regex = new RegExp(`##${variable}##`, "g");
                 const value = varContent[variable] as (string | string[]);
                 if (value instanceof Array) {
-                    _response = _response.replace(regex, value.join(", "));
+                    _response = _response.replace(regex, value.join("\n"));
                 } else {
                     _response = _response.replace(regex, value);
                 }
@@ -309,10 +404,9 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
         if (response_options_from_commerce) {
             // Models: array | array-object
             // Buttons or List => string[][] | Record<string,string|number>[][]
-
+            const _varContent: string[] | Record<string, unknown>[] = 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const _varContent: string[] | Record<string, unknown>[] = varContent[response_options_from_commerce.response_code] as any;
-            console.log("***-> Contenido de la variable desde el comercio ", _varContent);
+                varContent[response_options_from_commerce.response_code] as any;
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             args.intent.response_options_from_commerce!.response = _varContent ? _varContent : [];
         }

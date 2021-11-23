@@ -7,7 +7,7 @@ import { Environment } from "./interfaces/app.interface";
 import { StaticBot } from "./bot/static.bot";
 import { iLogger } from "./interfaces/logger.interface";
 import { PubSubConstructorArgs } from "./interfaces/pubSub.interface";
-import { CommerceRepository } from "./bot/repository/commerce.repository";
+import { VenttysRepository } from "./bot/repository/commerce.repository";
 import { IntentsHandler } from "./bot/repository/intents-handler";
 import { Order } from "./interfaces/commerce.interface";
 
@@ -37,7 +37,7 @@ export async function bootstrap(): Promise<void> {
     };
 
     const pubSub = new KafkaPubSub(pubSubOptions, logger);
-    const commerceRepository = new CommerceRepository(commercePhoneNumber, logger);
+    const commerceRepository = new VenttysRepository(commercePhoneNumber, logger);
     const intentHandler = new IntentsHandler<Order>(commerceRepository, logger);
     const bot = new StaticBot(commerceRepository, intentHandler, logger);
     const wh = new WhatsAppHandler({ commercePhoneNumber, logger, pubSub, bot });

@@ -1,12 +1,22 @@
 import { Schema, model } from "mongoose";
-import { BotEntity } from "../../bot/domain/bot.entity";
+import { BotEntity, OperationMath } from "../../bot/domain/bot.entity";
+
+const OperationMath = new Schema<OperationMath>({
+    operation: {
+        type: String,
+        enum: ["+", "-", "*", "/"],
+        required: true
+    },
+    vars: { type: [String], required: true },
+}, { _id: false, versionKey: false });
 
 export const BotEntitySchema = new Schema<BotEntity>({
     code: { type: String, index: true, unique: true },
     collectionName: { type: String, required: true },
-    isSessionVar: Boolean,
     path: { type: [String], required: true, default: [] },
-    defaultValue: {type: String, required: false},
+    defaultValue: { type: String, required: false },
+    isSessionVar: { type: Boolean, default: false },
+    fromMathOperations: { type: [OperationMath], required: false },
     type: {
         type: String,
         enum: [

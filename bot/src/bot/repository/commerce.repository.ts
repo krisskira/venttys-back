@@ -1,14 +1,16 @@
 /* eslint-disable no-case-declarations */
 import { EventEmitter } from "events";
 import { iLogger } from "../../interfaces/logger.interface";
-import { CommerceRepository as iCommerceRepository } from "../../interfaces/commerce.repository.interface";
+import { ProductOwnerRepository as ProductOwnerRepository } from "../../interfaces/commerce.repository.interface";
 import { firebaseDB } from "../../firebase";
-import { BankAccount, CommerceScheduleDate, iCommerce, Order, Product, Zones } from "../../interfaces/commerce.interface";
+import { BankAccount, CommerceScheduleDate, Commerce, Order, OrderDetail, Product, Zones, PaymentMethod } from "../../interfaces/commerce.interface";
 import { BotEntity } from "../domain/bot.entity";
 import { formatTime } from "../../utils/formatTime";
+import { BotSessionVar } from "../domain/bot.session.entity";
+import { genRamdonString } from "../../utils/genRandomString";
 
-export class CommerceRepository implements iCommerceRepository<iCommerce, Order> {
-    public readonly TAG = "CommerceRepository";
+export class VenttysRepository implements ProductOwnerRepository<Commerce, Order> {
+    public readonly TAG = "VenttysRepository";
     public readonly phoneNumber: string;
     private readonly firebaseCommerceReference: FirebaseFirestore.DocumentReference;
     private readonly logger: iLogger;
@@ -54,10 +56,83 @@ export class CommerceRepository implements iCommerceRepository<iCommerce, Order>
     }
 
     async runAction(customerPhoneNumber: string, order: Order): Promise<void> {
+        const data = order as any;
+
+        // {
+        //     key: 'session_var_products_selected',
+        //     content: '[{"name":"Hot DOG","normal_price":"12500."}]',
+        // }
+
+        // {
+        //     key: 'session_var_quantity_product_selected',
+        //     content: '["1"]',
+        // }
+
+        // {
+        //     key: 'session_var_client_name',
+        //     content: 'Crhistin',
+        // }
+
+        // {
+        //     key: 'session_var_payment_method_selected',
+        //     content: 'Transferencia Bancaria',
+        // }
+
+        // const sessionVars = data.vars as BotSessionVar[];
+        // const orderData = sessionVars.reduce<Record<string, string>>((obj, _sessionVar) =>
+        //     ({ ...obj, [_sessionVar.key]: _sessionVar.content }), {} as any);
+        // const products = JSON.parse(orderData["session_var_quantity_product_selected"]) as { name: string, normal_price: string }[];
+        // const productNumber = JSON.parse(orderData["session_var_products_selected"]) as string[];
+        // const products_detail: OrderDetail[] = products.map((product, index) => {
+        //     return {
+        //         prodcut_id: genRamdonString(5),
+        //         product_name: product.name,
+        //         note: "Notes",
+        //         product_price: parseFloat(product.normal_price) * parseInt(productNumber[index]),
+        //         quantity: parseInt(productNumber[index])
+        //     };
+        // });
+
+        // const _order = {
+        //     address: orderData[""] || "",
+        //     cancel_reason: null,
+        //     client: orderData["session_var_client_name"],
+        //     close_at: 0,
+        //     commerce: customerPhoneNumber,
+        //     created_at: Date.now(),
+        //     phone: order.phone,
+        //     products_detail,
+        //     status: "waiting",
+        //     total: 1000,
+        //     zone: orderData["session_var_client_delivery_zones"],
+        //     payment_method: orderData["session_var_payment_method_selected"]
+        // };
+
+        const _order = {
+            address: "Calle 1",
+            cancel_reason: null,
+            client: "Crhistian",
+            close_at: 0,
+            commerce: customerPhoneNumber,
+            created_at: Date.now(),
+            phone: "573183919187@c.us",
+            products_detail:[{
+                prodcut_id: genRamdonString(5),
+                product_name: "Hamburgesa",
+                note: "Notes",
+                product_price: 1000,
+                quantity: 1
+            }],
+            status: "waiting",
+            total: 1000,
+            zone: "Centro",
+            payment_method: "Efectivo"
+        };
+
         await this.firebaseCommerceReference
             .collection("orders")
             .doc(await this.getOrdenId(/*customerPhoneNumber*/))
-            .create(order);
+            .create(_order);
     }
 
     private async getOrdenId(/*customerId: string*/): Promise<string> {
@@ -81,9 +156,9 @@ export class CommerceRepository implements iCommerceRepository<iCommerce, Order>
         });
     }
 
-    async getInfo(): Promise<iCommerce> {
+    async getInfo(): Promise<Commerce> {
         const commerceRef = await this.firebaseCommerceReference.get();
-        return <iCommerce>commerceRef.data();
+        return <Commerce>commerceRef.data();
     }
 
     async getProducts(): Promise<Product[]> {
@@ -141,13 +216,12 @@ export class CommerceRepository implements iCommerceRepository<iCommerce, Order>
         return array;
     }
 
-    async getPaymentMethods(): Promise<string[]> {
+    async getPaymentMethods(): Promise<PaymentMethod[]> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any   
         const paymentMethods = (await this.getInfo()).payment_methods;
         const methods = paymentMethods.map(({ name }) => name);
-        return [...methods];
+        return paymentMethods;
     }
-
 
     async getResolveEntity<T>(entity: BotEntity, customerPhoneNumber: string): Promise<T | T[]> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,11 +249,11 @@ export class CommerceRepository implements iCommerceRepository<iCommerce, Order>
             case "commerces":
                 collectionData = [await this.getInfo()];
                 break;
-            case "fix":
+            case "fixed-message":
                 collectionData = [
                     {
                         "waiting": "Espera",
-                        "cooking": "preparación",
+                        "cooking": "Preparación",
                         "finish": "Enviado",
                         "canceled": "Cancelado"
                     }

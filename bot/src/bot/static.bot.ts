@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { iLogger } from "../interfaces/logger.interface";
 import { Bot, BotButtonOption as BotOptionButton, BotListOption as BotOptionList } from "../interfaces/bot.interface";
 import { IntentsHandlerRepository } from "./repository/intents-handler";
-import { CommerceRepository } from "../interfaces/commerce.repository.interface";
+import { ProductOwnerRepository } from "../interfaces/commerce.repository.interface";
 
 import { NOTIFICATION_TAG } from "./domain/bot-intent.entity";
 
@@ -13,9 +13,9 @@ export class StaticBot<TCommerce, TData> implements Bot {
     private readonly commercePhoneNumber: string;
     private readonly logger: iLogger;
     private readonly emiterOnSpeak = new EventEmitter();
-    private readonly commerceRepository: CommerceRepository<TCommerce, TData>;
+    private readonly commerceRepository: ProductOwnerRepository<TCommerce, TData>;
 
-    constructor(commerceRepository: CommerceRepository<TCommerce, TData>, intentHandler: IntentsHandlerRepository, logger: iLogger) {
+    constructor(commerceRepository: ProductOwnerRepository<TCommerce, TData>, intentHandler: IntentsHandlerRepository, logger: iLogger) {
         this.commercePhoneNumber = commerceRepository.phoneNumber;
         this.logger = logger;
         this.intentResolver = intentHandler;

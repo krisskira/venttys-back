@@ -6,10 +6,10 @@ export interface CommerceSourceEntity {
     phone: string;
 }
 
-export interface CommerceRepository<TCommerce, TData> {
+export interface ProductOwnerRepository<TCommerce, TData> {
     phoneNumber: string;
     getResolveEntity<T>(entity: BotEntity, customerPhoneNumber: string): Promise<T | T[]>;
     getInfo():Promise<TCommerce>;
     onEventListen(listener: (customerPhoneNumber: string, data: TData) => void): void;
-    runAction<TData>(customerPhoneNumber: string, data: TData): Promise<void>;
+    runAction(customerPhoneNumber: string, data: TData): Promise<void>;
 }

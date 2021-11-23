@@ -8,7 +8,7 @@ export interface Bot {
 }
 
 const BotSchema = new Schema<Bot>({
-    code: { type: String, unique: true, index: true, default: "default"},
+    code: { type: String, unique: true, index: true, default: "Default"},
     intents: [{ type: Schema.Types.ObjectId, ref: "BotIntent"}],
     default: { type: Schema.Types.ObjectId, ref: "BotIntent", required: true}
 });

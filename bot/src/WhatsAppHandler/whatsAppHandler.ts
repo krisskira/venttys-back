@@ -176,7 +176,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
                                     if (buttons?.length) {
                                         await this.client.sendButtons(
                                             from,
-                                            "También puedes",
+                                            "Otras opciones",
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             buttons as any,
                                             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -184,6 +184,7 @@ export class WhatsAppHandler implements iWhatsappHandler {
                                         );
                                     }
                                 } else {
+                                    console.log("Buttons: ", buttons);
                                     await this.client.sendButtons(
                                         from,
                                         response.title,

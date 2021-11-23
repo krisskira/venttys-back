@@ -28,7 +28,7 @@ export const intents: BotIntent[] = [
         tag: "HacerPedido",
         pattern: ["😋 Hacer un pedido"],
         variables: [],
-        response: ["Este es nuestro menú.","¿Qué deseas Ordenar?"],
+        response: ["¿Qué deseas Ordenar?", "_Este es nuestro menú._", "👇👇👇"],
         response_options_from_commerce: {
             response_code: "commerce_products",
             response_options_type: "list",
@@ -36,7 +36,7 @@ export const intents: BotIntent[] = [
             response: []
         },
         response_options: [],
-        session_var_to_save: "session_var_products_selected|session_var_price_products_selected",
+        session_var_to_save: "session_var_products_selected",
         next_tags: ["waiting", "NumeroUnidadesPedidas"],
     },
     {
@@ -44,7 +44,8 @@ export const intents: BotIntent[] = [
         pattern: ["🍕 Si Agregar"],
         variables: [],
         response: [
-            "Por favor seleccione otro producto del menu."
+            "Por favor seleccione otro producto del menu.",
+            "O seleccione otras opciones para continuar."
         ],
         response_options_from_commerce: {
             response_code: "commerce_products",
@@ -57,7 +58,7 @@ export const intents: BotIntent[] = [
             "❌ Cancelar Pedido"
         ],
         response_options_type: "button",
-        session_var_to_save: "session_var_products_selected|session_var_price_products_selected",
+        session_var_to_save: "session_var_products_selected",
         next_tags: ["waiting", "NumeroUnidadesPedidas"],
     },
     {
@@ -85,12 +86,13 @@ export const intents: BotIntent[] = [
     {
         tag: "ConfirmarPedido",
         pattern: ["✅ Confirmar el pedido"],
-        variables: ["session_var_products_selected", "computed_var_partial_value"],
+        variables: ["computed_var_summary_products_selected", "computed_var_partial_value"],
         response: [
             "Tu pedido es:",
             "##computed_var_summary_products_selected##",
             "Valor Parcial: ##computed_var_partial_value##",
-            "\nPor favor indicanos tu nombre y apellidos.",
+            "",
+            "*Por favor indicanos tu nombre y apellidos:*",
         ],
         session_var_to_save: "session_var_client_name",
         response_options: [],
@@ -100,7 +102,7 @@ export const intents: BotIntent[] = [
         tag: "VerMenu",
         pattern: ["👀 Ver nuestro menú"],
         variables: [],
-        response: ["Este es nuestro menú.","*¿Qué deseas Ver?*"],
+        response: ["Este es nuestro menú.","_Después de ver el menú, seleccione una de las otras opciones para continuar._"],
         response_options_from_commerce: {
             response_code: "commerce_products",
             response_options_type: "list",
@@ -121,6 +123,7 @@ export const intents: BotIntent[] = [
         response: [
             "Estimado cliente, nuestro horario es:",
             "##commerce_schedule##",
+            "",
             "Encuéntranos en ##commerce_address##",
         ],
         response_options_type: "button",
@@ -140,20 +143,22 @@ export const intents: BotIntent[] = [
         ],
         response_options_type: "button",
         response_options: [
-            "🛵 Quiero Entrega a Domicilio",
-            "🚶‍♂️Prefiero Recoger mi Pedido en el Restaurante",
+            "🛵Entrega a Domicilio",
+            "🚶‍♂️Prefiero Recoger",
         ],
         session_var_to_save: "session_var_client_delivery_zones",
         next_tags: [],
     },
     {
         tag: "ZonasEntrega",
-        pattern: ["🛵 Quiero Entrega a Domicilio"],
+        pattern: ["🛵Entrega a Domicilio"],
         variables: ["commerce_delivery_zones"],
         response: [
             "Recuerda que nuestra zona cobertura y tarifas de Domiclilio son las siguientes:",
+            "",
             "##commerce_delivery_zones##",
-            "\n¿Cuál es la dirección del domicilio?"
+            "",
+            "*¿Cuál es la dirección del domicilio?*"
         ],
         response_options: [],
         session_var_to_save: "session_var_client_delivery_zones",
@@ -161,7 +166,7 @@ export const intents: BotIntent[] = [
     },
     {
         tag: "MedioPago",
-        pattern: ["🚶‍♂️Prefiero Recoger mi Pedido en el Restaurante", "💸 Escoger medio de pago"],
+        pattern: ["🚶‍♂️Prefiero Recoger", "💸 Escoger medio de pago"],
         variables: [],
         response: [
             "¿Con que medio de pago desea cancelar su pedido?",
@@ -180,13 +185,19 @@ export const intents: BotIntent[] = [
     {
         tag: "Completed",
         pattern: [],
-        variables: ["session_var_client_name", "session_var_products_selected", "computed_var_partial_value", "commerce_bank_account"],
+        variables: ["session_var_client_name", "computed_var_summary_products_selected", "computed_var_partial_value", "commerce_bank_account"],
         response: [
             "Gracias ##session_var_client_name## por su compra. Tu pedido es:",
-            "##session_var_products_selected##",
+            "",
+            "##computed_var_summary_products_selected##",
+            "",
             "Valor Total: ##computed_var_partial_value## + Costo de envío.",
+            "",
             "Su pedido está en proceso de confirmación. En un minutos te escribiremos nuevamente para indicarte la confirmación del pedido y el tiempo estimado de entrega",
-            "Nuestros núermos de cuenta para la transferencia son: \n\n##commerce_bank_account##"
+            "",
+            "Nuestros núermos de cuenta para la transferencia son:",
+            "",
+            "##commerce_bank_account##"
         ],
         response_options: [],
         next_tags: [],

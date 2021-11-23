@@ -16,19 +16,21 @@ export interface BotIntent  {
     groupBy?: string; // Inner field to group
 }
 
-export type TagsToEndType = | "Completed" | "Close" | "End" | "NeedHuman" | string;
 export enum TagsToEnd {
     Completed = "Completed",
     Close = "Close",
     End = "End",
     NeedHuman = "NeedHuman",
 }
-
+export const BOT_TAG_DEFAULT = "Default";
 export const BOT_TAG_WAITING = "waiting";
+export const BOT_TAG_COMPLETED = "Completed";
 export const NOTIFICATION_TAG = "NOTIFICATION_TAG";
+export type TagsToEndType = | "Completed" | "Close" | "End" | "NeedHuman" | string;
 export const BOT_TAGS_TO_END: TagsToEndType[] = [
-    "Completed",
+    BOT_TAG_COMPLETED,
     "Close",
     "End",
-    "NeedHuman"
+    "NeedHuman",
+    NOTIFICATION_TAG
 ];

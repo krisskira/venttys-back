@@ -4,11 +4,11 @@ export interface BotEntity {
     path: string[],
     isSessionVar: boolean,
     defaultValue?: string,
-    fromMathOperations?: operation[]
+    fromMathOperations?: OperationMath[]
     type: "single" | "object" | "array" | "array-object"
 }
 
-interface operation {
+export interface OperationMath {
     vars: string[]
     operation: "+" | "-" | "*" | "/"
 }
