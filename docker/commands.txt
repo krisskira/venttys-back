@@ -10,3 +10,6 @@ docker run --rm -d \
     --network=venttys-net \
     --name "phone_573117922157" \
     whatsapp-handler
+
+docker build -t whatsapp-handler .
+pm2 start --name "venttys" "npm -- run dev"
