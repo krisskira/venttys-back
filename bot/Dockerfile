@@ -24,7 +24,7 @@ RUN apt-get update && \
 
 COPY --from=builder /home/build/build /home/app/build
 COPY --from=builder /home/build/package.json /home/app
-RUN npm install
+RUN npm install --production
 
 ENV PHONE=''
 ENV COMMERCE=''
