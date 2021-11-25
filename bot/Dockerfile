@@ -24,12 +24,13 @@ RUN apt-get update && \
 
 COPY --from=builder /home/build/build /home/app/build
 COPY --from=builder /home/build/package.json /home/app
-RUN npm install --production
+COPY --from=builder /home/build/package-lock.json /home/app
+RUN npm install --product
 
 ENV PHONE=''
 ENV COMMERCE=''
 ENV NODE_ENV='production'
-ENV EXTERNAL_PUBSUB_SERVER='kafka:9092'
+ENV EXTERNAL_PUBSUB_SERVER='venttys-kafka:9092'
 ENV DB_CONNECTION_STRING="mongodb://venttys:dmVudHR5cw@venttys-mongo:27017/venttys-bot?authSource=admin"
 VOLUME ["/home/app/public", "/home/app/tokens"]
 CMD ["npm", "start"]

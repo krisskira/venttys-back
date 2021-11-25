@@ -1,15 +1,15 @@
-** CREATE COMMERCE CONTAINER
+pm2 start --name "venttys" "npm -- run dev"
+
+docker build -t registry.gitlab.com/vettys/backend/whatsapp-handler .
+
 docker run --rm -d \
-    -p 8003:8003 \
+    --network=venttys-net \
+    -v "venttys-wh-tokens:/home/app/tokens" \
+    -v "venttys-wh-public:/home/app/public" \
+    --name "phone_573117922157" \
+    -e COMMERCE="Hamburguesas KRUSTY" \
     -e NODE_ENV=development \
     -e PHONE="+573117922157" \
-    -e COMMERCE="CommerceNameTest" \
-    -e EXTERNAL_PUBSUB_SERVER='kafka:9092' \
-    -v "venttys-wh-public:/home/app/public" \
-    -v "venttys-wh-tokens:/home/app/tokens" \
-    --network=venttys-net \
-    --name "phone_573117922157" \
-    whatsapp-handler
+    -e EXTERNAL_PUBSUB_SERVER='venttys-kafka:9092' \
+    registry.gitlab.com/vettys/backend/whatsapp-handler
 
-docker build -t whatsapp-handler .
-pm2 start --name "venttys" "npm -- run dev"

@@ -1,12 +1,12 @@
 version: "3.9"
 services:
   venttys-wh:
-    image: whatsapp-handler
+    image: registry.gitlab.com/vettys/backend/whatsapp-handler
     build: .
     container_name: whatsapp-handler
     volumes: 
       - ./public:/home/app/public
-      # - ./tokens:/home/app/tokens
+      - ./tokens:/home/app/tokens
     environment: 
       - ENV="development"
       - PHONE="+573185449408"

@@ -50,7 +50,7 @@ export class DockerProcessHandler implements iProcessHandler {
   };
 
   run = async (process: iProcessArgs): Promise<string[]> => {
-    const imageName = "whatsapp-handler";
+    const imageName = "registry.gitlab.com/vettys/backend/whatsapp-handler";
     const { commerceName = "", commerceNumber = "" } = process.envVars;
     const db = this._databaseUri
       ? ["-e", `MONGODB_URL="${this._databaseUri}"`]
@@ -74,7 +74,7 @@ export class DockerProcessHandler implements iProcessHandler {
       `PHONE="${commerceNumber}"`,
       ...db,
       "-e",
-      `EXTERNAL_PUBSUB_SERVER="${this._pubSubServer}"`,
+      `EXTERNAL_PUBSUB_SERVER="venttys-kafka:9092"`,
       imageName,
     ];
 

@@ -9,4 +9,5 @@ logs/*
 !public/qr-codes/index.html
 !tokens/.gitkeep
 .env
+.env.*
 src/firebase/firebase.cert.json
