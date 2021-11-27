@@ -33,6 +33,7 @@ export class WistonLogger implements iLogger {
                             format.colorize(),
                             format.printf(
                                 ({ level, message, timestamp, tag = "" }) =>
+                                    // https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
                                     `[${timestamp}] [${level}]: \x1b[1m${tag}\x1b[0m\n` +
                                     `\x1b[2m${message}\x1b[0m\n`
                             ),
