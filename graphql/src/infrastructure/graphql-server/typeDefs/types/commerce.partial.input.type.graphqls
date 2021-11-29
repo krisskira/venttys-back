@@ -36,6 +36,8 @@ input CommercePartialInput {
   delivery_time: String
   commerce_status: CommerceStatus
   messages: CommerceMessagePartialInput
+  botCode: String
+  assistance_name: String
   paymentMehods: [PaymentMethodInput]
   schedules: [CommerceScheduleDateInput]
 }

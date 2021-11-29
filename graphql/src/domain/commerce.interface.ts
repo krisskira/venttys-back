@@ -33,6 +33,8 @@ export interface Commerce {
   delivery_price: number;
   delivery_time: string;
   commerce_status: CommerceStatus;
+  botCode: string;
+  assistance_name: string;
   messages: {
     open: CommerceMessage;
     await: CommerceMessage;

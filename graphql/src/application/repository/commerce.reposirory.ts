@@ -73,6 +73,8 @@ export class CommerceRepository implements iRepository<Commerce> {
         commerce_status: "Close",
         delivery_price: 0,
         delivery_time: "0 min",
+        botCode: commerceInfo.botCode || "Default",
+        assistance_name: commerceInfo.assistance_name || "Venttys",
         paymentMehods: [],
         messages: this.genCommerceMessages(),
         schedules: this.genWeekDays(),

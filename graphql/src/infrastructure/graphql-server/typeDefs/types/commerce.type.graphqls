@@ -39,6 +39,8 @@ type Commerce {
   delivery_time: String
   commerce_status: CommerceStatus
   messages: CommerceMessage
+  botCode: String
+  assistance_name: String
   paymentMehods: [PaymentMethod]
   schedules: [CommerceScheduleDate]
 }

@@ -30,4 +30,6 @@ input CommerceInput {
   phone: String!
   address: String!
   state: String!
+  botCode: String
+  assistance_name: String
 }
