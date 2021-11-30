@@ -78,6 +78,9 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
             // Update the session time live.
             if ((elapseSessionTime < maxSessionTime && !sessionHasEnded) || isNotification) {
                 userSession.updatedAt = new Date();
+                if(isNotification){
+                    userSession.is_active = false;
+                }
                 this.logger.log({
                     tag: this.TAG,
                     type: "DEBUG",
