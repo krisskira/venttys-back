@@ -19,14 +19,14 @@ export const entities: BotEntity[] = [
     {
         code: "commerce_products",
         isSessionVar: false,
-        path: ["category|name", "name","normal_price","description"],
+        path: ["category|name", "name", "normal_price", "description"],
         collectionName: "products",
         type: "array-object"
     },
     {
         code: "commerce_schedule",
         isSessionVar: false,
-        path: ["name","openString","closeString"],
+        path: ["name", "openString", "closeString"],
         collectionName: "schedules",
         type: "single"
     },
@@ -40,14 +40,14 @@ export const entities: BotEntity[] = [
     {
         code: "commerce_bank_account",
         isSessionVar: false,
-        path: ["name","number"],
+        path: ["name", "number"],
         collectionName: "bank_accounts",
         type: "single"
     },
     {
         code: "commerce_delivery_zones",
         isSessionVar: false,
-        path: ["name","price"],
+        path: ["name", "price"],
         collectionName: "zones",
         type: "single"
     },
@@ -67,6 +67,13 @@ export const entities: BotEntity[] = [
     },
     {
         code: "session_var_quantity_product_selected",
+        isSessionVar: true,
+        path: [],
+        collectionName: "session",
+        type: "array"
+    },
+    {
+        code: "session_var_note_product_selected",
         isSessionVar: true,
         path: [],
         collectionName: "session",
@@ -128,9 +135,12 @@ export const entities: BotEntity[] = [
         path: [],
         collectionName: "computed",
         type: "array",
-        fromMathOperations:[{
+        fromMathOperations: [{
             operation: "+",
-            vars:["session_var_products_selected|name", "session_var_quantity_product_selected"]
+            vars: [
+                "session_var_quantity_product_selected",
+                "session_var_products_selected|name"
+            ]
         }]
     },
     {
@@ -139,10 +149,13 @@ export const entities: BotEntity[] = [
         path: ["price",],
         collectionName: "computed",
         type: "single",
-        fromMathOperations:[
+        fromMathOperations: [
             {
                 operation: "*",
-                vars:["session_var_quantity_product_selected", "session_var_products_selected|normal_price"]
+                vars: [
+                    "session_var_quantity_product_selected",
+                    "session_var_products_selected|normal_price"
+                ]
             }
         ]
     },

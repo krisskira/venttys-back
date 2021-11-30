@@ -6,6 +6,7 @@ import { BotIntent, BOT_TAGS_TO_END, BOT_TAG_COMPLETED, BOT_TAG_DEFAULT, BOT_TAG
 import { ProductOwnerRepository, CommerceSourceEntity } from "../../interfaces/commerce.repository.interface";
 import { BotEntity } from "../domain/bot.entity";
 import { BotSessionVar } from "../domain/bot.session.entity";
+import { isJSON, safeStructureDecode } from "../../utils/isJSON";
 
 export class IntentsHandler<TData> implements IntentsHandlerRepository {
 
@@ -48,6 +49,7 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
         const maxSessionTime = 30;
         const sessionActive = isNotification ? {} : { is_active: true };
         let [userSession] = await UserSessionModel
+            // TODO: Pending filter by period lower at today.
             .find({ phone: args.customerPhoneNumber, ...sessionActive })
             .sort({ updatedAt: -1 })
             .limit(1)
@@ -127,7 +129,6 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
             if (tags[0] === BOT_TAG_WAITING) {
                 const sessionVarName = (userSession.currentIntent as BotIntent).session_var_to_save || "";
                 // Save the multiple sessions vars
-                console.log("***-> Session vars: ", userSession.vars);
                 const varIndex = userSession.vars.findIndex(({ key = "" }) => `${key}` === `${sessionVarName}`);
                 const entity = this.entities.find(({ code }) => code === sessionVarName);
                 // The entity the value type can look {path[0]:value, path[1]:value,...}
@@ -298,7 +299,7 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
                     if (type === "single") {
                         if (entity.path.length > 0) {
                             // Object string
-                            console.log("Computed var: ", content, "\nentity:", entity);
+                            // console.log("Computed var: ", content, "\nentity:", entity);
                             rawContent = JSON.parse(content || entity.defaultValue || "{}");
                         } else {
                             // Single string
@@ -315,8 +316,96 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
                     }
                     varContent[variable] = rawContent;
                 }
-                console.log("***-> Content Session: ", varContent);
+                /** COMPUTED VARS */
+                else {
+                    // console.log("Initial Vars: ", entity.fromMathOperations);
+                    // console.log("Map Session Vars: ", args.sessionVars);
+                    const initialResults = entity.fromMathOperations?.map(OpMath => {
+                        const vars = OpMath.vars.map(keys => {
+                            const content = keys.split("|").reduce((acc, key, index, array) => {
+                                if (index === 0) {
+                                    let rawVal = args.sessionVars.find(({ key: sVarkey }) => sVarkey === key)?.content || "*C.Var-Undefined*";
+                                    if (isJSON(rawVal)) {
+                                        rawVal = JSON.parse(rawVal);
+                                    }
+                                    // console.log("***->Initial Value : ", rawVal);
+                                    return rawVal;
+                                }
+                                if (index === (array.length - 1)) {
+                                    if (acc[key]) {
+                                        // console.log(`***->${key} The value is defined then return value: `, acc[key]);
+                                        return acc[key];
+                                    }
+                                    if (acc instanceof Array) {
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        return (acc as Array<any>).map(val => {
+                                            // console.log("***-> Extracted value: ", val[key] || val);
+                                            return val[key] || val;
+                                        });
+                                    }
+                                    // console.log("***->Previus Item ", acc);
+                                    return acc;
+                                }
+                                return acc[key];
+                            }, "" as any);
+                            return content;
+                        });
+
+                        // console.log("**->Variables: ", vars);
+                        const lines: string[] = [];
+                        if (vars.length > 0) {
+                            if (vars[0] instanceof Array) {
+                                (vars[0] as Array<any>).forEach((_var, innerIndex) => {
+                                    const newContent = vars.reduce((acc, val, index) => {
+                                        const [type1, var1] = safeStructureDecode(acc);
+                                        const [type2, var2] = safeStructureDecode(vars[index][innerIndex]);
+                                        // console.log("Before math var 1: ", type1, var1);
+                                        // console.log("Before math var 2: ", type2, var2);
+                                        if (type1 === "number" && type2 === "number") {
+                                            if (OpMath.operation === "+") return <number>var1 + <number>var2;
+                                            if (OpMath.operation === "-") return <number>var1 + <number>var2;
+                                            if (OpMath.operation === "*") return <number>var1 * <number>var2;
+                                            if (OpMath.operation === "/") return <number>var1 / <number>var2;
+                                        }
+                                        return `${acc} ${vars[index][innerIndex]}`;
+                                    }, "");
+                                    lines.push(newContent);
+                                    // console.log("***-> Computed new Content: ", newContent);
+                                });
+                            } else {
+                                lines.push("**Undefined**");
+                            }
+                        }
+                        // console.log("***-> Computed Line: ", lines);
+                        return lines;
+                    });
+
+                    if (entity.type === "single") {
+                        varContent[variable] = initialResults?.map((line) => {
+                            const r = line.reduce((acc, val, index) => {
+                                const [t, v] = safeStructureDecode(`${val}`);
+
+                                if (t === "string") {
+                                    const resp = acc + v;
+                                    return index === 0 ? resp : ", " + resp;
+                                }
+                                if (t === "number") {
+                                    if (index === 0) return v;
+                                    const s = acc + v;
+                                    return s;
+                                }
+                                acc[index] = val;
+                                return acc;
+                            }, "" as any);
+                            return [[r]];
+                        });
+                    } else {
+                        varContent[variable] = initialResults?.join("\n");
+                    }
+                    // console.log("***-> Computed vars: ", varContent[variable]);
+                }
             } else {
+                console.log("Entity: ", entity);
                 // Models: single | object | array | array-object
                 // Variables => string[] | Record<string, string|number>[]
                 // Buttons or List => string[][] | Record<string,string|number>[][]
@@ -324,59 +413,6 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
                     await this.commerce.getResolveEntity(entity, args.customerPhoneNumber) ||
                     entity.defaultValue
                     || "*Undefined*";
-            }
-        }
-
-        /** COMPUTED VARS */
-        for (const variable of [...variables, ...extraVars]) {
-            const entity = this.entities.find(({ code }) => code === variable);
-            if (!entity) {
-                const errorMessage = "" +
-                    `The entities has bad configured to commerce: '${this.commerceInfo.phone}'\n` +
-                    `Entity: ${variable} not found.`;
-                this.logger.log({ tag: this.TAG, type: "ERROR", msg: errorMessage });
-                throw errorMessage;
-            }
-
-            if (entity.isSessionVar) {
-                if (entity.collectionName === "computed") {
-                    varContent[variable] = "*PENDING*";
-                    // console.log("Initial Vars: ", entity.fromMathOperations);
-                    // console.log("Map Session Vars: ", varContent);
-                    // const initialResults = entity.fromMathOperations?.map(OpMath => {
-                    //     const vars = OpMath.vars.map(keys => {
-                    //         const content = keys.split("|").reduce((acc, key, index, array) => {
-                    //             const rawVal = index === 0
-                    //                 ? varContent[key]
-                    //                 : acc[key];
-                    //             console.log(`***-> Get var (${index}): `, keys, key, `\nContent (${key}): `, rawVal);
-                    //             const asNumber = parseFloat(rawVal);
-                    //             if (index === (array.length - 1)) {
-                    //                 if (asNumber) { return asNumber; }
-                    //                 return rawVal + " ";
-                    //             }
-                    //             return rawVal;
-                    //         }, "" as any);
-                    //         return content;
-                    //     });
-                    //     console.log("**->Variables: ", vars);
-                    //     let result = "*Undefined?*";
-                    //     const opeMathString = "result = " + vars.join(OpMath.operation);
-                    //     console.log("***-> Math: ", opeMathString);
-                    //     try {
-                    //         eval(opeMathString);
-                    //     } catch (error) {
-                    //         result = (error as Error).message;
-                    //     }
-                    //     return result;
-                    // });
-                    // console.log("***-> Computed vars: ", initialResults);
-                    // if (entity.type === "array") {
-                    //     varContent[variable] = initialResults;
-                    // } else {
-                    //     varContent[variable] = initialResults?.join("\n");
-                    // }
-                }
             }
         }
 
@@ -404,8 +440,8 @@ export class IntentsHandler<TData> implements IntentsHandlerRepository {
         if (response_options_from_commerce) {
             // Models: array | array-object
             // Buttons or List => string[][] | Record<string,string|number>[][]
-            const _varContent: string[] | Record<string, unknown>[] = 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const _varContent: string[] | Record<string, unknown>[] =
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 varContent[response_options_from_commerce.response_code] as any;
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             args.intent.response_options_from_commerce!.response = _varContent ? _varContent : [];

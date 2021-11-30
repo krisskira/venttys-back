@@ -148,9 +148,13 @@ export class StaticBot<TCommerce, TData> implements Bot {
                             }, {} as Record<string, string | number>);
 
                         const title = `${listItem[listItemsGroupBy] || defaultTitle}`;
-                        console.log("***-> Delete: ", delete listItem[listItemsGroupBy]);
+                        delete listItem[listItemsGroupBy];
 
-                        console.log("***->" + listItemsGroupBy, "\nTitle", title, "\nContent:", listItem);
+                        this.logger.log({
+                            type: "DEBUG",
+                            tag: this.TAG,
+                            msg: listItemsGroupBy + "\nTitle" + title + "\nContent:" + listItem
+                        });
 
                         const [keyTitle, ...keyContent] = Object.keys(listItem);
                         const description = keyContent.map((key) => listItem[key]).join(".\n");
