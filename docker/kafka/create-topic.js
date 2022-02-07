@@ -18,10 +18,13 @@ admin.createTopic(topic, (error) => {
   if (error) {
     if (error.code === 36) {
       console.log("***-> The topic was previous created");
+      process.exit(0);
     } else {
       console.log("***-> ", error);
+      process.exit(1);
     }
   } else {
     console.log("***-> Topic created");
+    process.exit(0);
   }
 });
