@@ -5,7 +5,7 @@ export interface iPubSubConstructorArgs {
   topics?: string[];
 }
 
-export type PublishMethod = "SelfGraphQLSubscrition" | "ExternalPubSubBroker"
+export type PublishMethod = "SelfGraphQLSubscrition" | "ExternalPubSubBroker";
 
 export enum PubSubChannel {
   onWhatsAppEvent = "onWhatsAppEvent",

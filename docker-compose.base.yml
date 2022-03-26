@@ -1,0 +1,32 @@
+version: "3.8"
+
+networks: 
+
+  venttys-net:
+    name: venttys-net
+
+volumes:
+
+  venttys-mongo:
+    name: venttys-mongo
+  venttys-wh-tokens:
+    name: venttys-wh-tokens
+  venttys-wh-public:
+    name: venttys-wh-public
+
+services:
+
+  mongo:
+    image: mongo
+    container_name: venttys-mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: venttys
+      MONGO_INITDB_ROOT_PASSWORD: dmVudHR5cw
+    volumes: 
+      - venttys-mongo:/data/db
+    ports: 
+      - 27017:27017
+    networks:
+      - venttys-net
+

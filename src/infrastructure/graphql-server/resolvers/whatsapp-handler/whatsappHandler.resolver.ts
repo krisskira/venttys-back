@@ -14,10 +14,11 @@ import {
   PubSubPayload,
 } from "../../../../infrastructure/interfaces";
 
-const initWhatsAppListener: iResolver<{ commerceInfo: CommerceBasicInfo }> =
-  async (...[, { commerceInfo }, context]) => {
-    return await whatsAppHandlerStartSessionController(commerceInfo, context);
-  };
+const initWhatsAppListener: iResolver<{
+  commerceInfo: CommerceBasicInfo;
+}> = async (...[, { commerceInfo }, context]) => {
+  return await whatsAppHandlerStartSessionController(commerceInfo, context);
+};
 
 const stopWhatsAppListener: iResolver<{ phoneNumber: string }> = async (
   ...[, { phoneNumber: commercePhoneNumber }, context]
@@ -34,10 +35,11 @@ const getWhatsAppStatus: iResolver<{ phoneNumber: string }> = async (
 const getAllWhatsAppStatus: iResolver<void> = async (...[, , context]) =>
   await whatsAppHandlerAllStatusController(undefined, context);
 
-const whatsAppReconnect: iResolver<{ commerceInfo: CommerceBasicInfo }> =
-  async (...[, { commerceInfo }, context]) => {
-    return await whatsAppHandlerReconectController(commerceInfo, context);
-  };
+const whatsAppReconnect: iResolver<{
+  commerceInfo: CommerceBasicInfo;
+}> = async (...[, { commerceInfo }, context]) => {
+  return await whatsAppHandlerReconectController(commerceInfo, context);
+};
 
 const subscWhatsappEvents: iResolver<PubSubPayload<unknown>> = (
   ...[, , context]

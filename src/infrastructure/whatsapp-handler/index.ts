@@ -1,19 +1,10 @@
-import { iLogger, iPubSub } from "../../infrastructure/interfaces";
-// import venom from "venom-bot";
-
 export class WhatsAppHandler {
-  //   constructor(logger: iLogger, pubSub: iPubSub) {
-  //     throw "No implement yet";
-  //   }
-
   async doOrder(): Promise<void> {
     throw "No implement yet";
   }
-
   async getOrderStatus(): Promise<void> {
     throw "No implement yet";
   }
-
   async responseToUser(option: string): Promise<void> {
     throw "No implement yet";
   }

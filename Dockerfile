@@ -4,6 +4,7 @@ COPY src ./src
 COPY package.json ./
 COPY package-lock.json ./
 COPY tsconfig.json ./
+
 RUN npm install
 RUN npm run build
 
@@ -24,10 +25,9 @@ ENV PATH $NODE_HOME/bin:$PATH
 
 RUN curl https://nodejs.org/dist/v$NODE_VERSION/$NODE_PACKAGE.tar.gz | tar -xzC /opt/
 
-ENV EXTERNAL_PUBSUB_SERVER='venttys-kafka:9092'
 ENV ENV='production'
-ENV PORT='80'
-EXPOSE 80
+ENV PORT=80
+EXPOSE ${PORT}
 
 COPY --from=builder /home/build /home/app
 WORKDIR /home/app

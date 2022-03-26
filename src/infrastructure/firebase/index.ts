@@ -1,17 +1,11 @@
-import {
-  auth,
-  credential,
-  firestore,
-  initializeApp,
-  ServiceAccount,
-} from "firebase-admin";
+import * as admin from "firebase-admin";
 
 import * as serviceAccount from "./firebase.cert.json";
 
-const app = initializeApp({
-  credential: credential.cert(serviceAccount as ServiceAccount),
+const app = admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
 
-export const firebaseDB = firestore(app);
-export const firebaseAuth: auth.Auth = auth(app);
-export type UserRecord = auth.UpdateRequest;
+export const firebaseDB = admin.firestore(app);
+export const firebaseAuth: admin.auth.Auth = admin.auth(app);
+export type UserRecord = admin.auth.UpdateRequest;

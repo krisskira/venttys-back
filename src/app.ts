@@ -25,13 +25,7 @@ export default async function bootstrap(): Promise<void> {
   // const logger = new ConsoleLogger(environment);
   // const processHandler = new PM2ProcessHandler(logger);
 
-  const pubSub = new PubSubHandler(
-    {
-      host: EXTERNAL_PUBSUB_SERVER,
-      topics: [],
-    },
-    logger
-  );
+  const pubSub = new PubSubHandler(logger);
 
   const app = new GraphQLApp({
     environment: environment,
