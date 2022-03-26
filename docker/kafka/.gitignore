@@ -1,6 +1,0 @@
-node_modules
-*.env
-./create-topic.js
-demo.js
-package.json
-package-lock.json
