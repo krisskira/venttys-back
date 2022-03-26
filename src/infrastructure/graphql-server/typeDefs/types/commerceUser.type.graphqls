@@ -1,0 +1,14 @@
+type CommerceUser {
+    auth_id: String
+    address: String
+    commerce: String
+    email: String
+    name: String
+    phone: String
+    rol: ROL
+    is_enable: Boolean
+}
+
+type Mutation {
+    updateUser(userInfo: CommerceUserPartialInput!): String
+}

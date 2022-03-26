@@ -1,0 +1,60 @@
+enum CommerceStatus {
+  Open
+  Close
+}
+
+type PaymentMethod {
+  name: String
+  id: String
+  description: String
+}
+
+type CommerceScheduleDate {
+  name: String
+  number_day: Int
+  code: Day
+  close: Time
+  open: Time
+  is_enable: Boolean
+}
+
+type CommerceMessageField {
+  enable: Boolean
+  value: String
+}
+
+type CommerceMessage {
+  open: CommerceMessageField
+  await: CommerceMessageField
+  close: CommerceMessageField
+}
+
+type Commerce {
+  name: String
+  phone: String
+  address: String
+  state: String
+  is_enable: Boolean
+  delivery_price: Int
+  delivery_time: String
+  commerce_status: CommerceStatus
+  messages: CommerceMessage
+  botCode: String
+  assistance_name: String
+  paymentMehods: [PaymentMethod]
+  schedules: [CommerceScheduleDate]
+}
+
+type Query {
+  commerces: [Commerce]
+  commerceBy(phoneNumber: String!): [Commerce]
+  usersByCommerce(commerceId: String!): [CommerceUser]
+}
+
+type Mutation {
+    commerce(commerceInfo: CommerceInput!): String
+    updateCommerce(commerceInfo: CommercePartialInput): OperationStatus
+    deactivateCommerce(commerceId: String!): OperationStatus
+    enrollUserAtCommerce(userInfo: CommerceUserInput!): String
+    dropUserOfCommerce(userId: String!): OperationStatus
+}

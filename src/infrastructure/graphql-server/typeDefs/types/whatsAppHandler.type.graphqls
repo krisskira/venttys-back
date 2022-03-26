@@ -1,0 +1,24 @@
+input CommerceWhatsAppInfo {
+    phoneNumber: String
+    name: String
+}
+
+type NotificationType {
+    type: String
+    data: JSON
+}
+
+type Query {
+    getAllWhatsAppStatus: [JSON]
+    getWhatsAppStatus(phoneNumber: String): [JSON]
+}
+
+type Mutation {
+    initWhatsAppListener(commerceInfo: CommerceWhatsAppInfo): [String]
+    stopWhatsAppListener(phoneNumber: String): [String]
+    whatsAppReconnect(commerceInfo: CommerceWhatsAppInfo): Void
+}
+
+type Subscription {
+    onWhatsAppEvent(phoneNumber: String): NotificationType
+}

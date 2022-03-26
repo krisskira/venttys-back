@@ -1,0 +1,8 @@
+input CommerceUserPartialInput {
+    auth_id: String!
+    address: String
+    commerce: String
+    name: String
+    rol: ROL
+    is_enable: Boolean
+}

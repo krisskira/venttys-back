@@ -1,0 +1,32 @@
+enum Day {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+  holiday
+}
+
+enum ROL {
+    Managerial
+    Operator
+}
+
+enum OperationStatus {
+    Completed
+    NoCompleted
+}
+
+type Time {
+  hour: Int!
+  minute: Int!
+  second: Int
+}
+
+input TimeInput {
+  hour: Int!
+  minute: Int!
+  second: Int
+}
